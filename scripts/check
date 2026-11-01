@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Runs every check, stopping at the first failure. CI runs this script too.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+step() { printf '\n== %s\n' "$1"; }
+
+step formatting
+git ls-files -z --cached --others --exclude-standard '*.hs' | xargs -0 ormolu --mode check
+cabal-gild --mode check racc.cabal
+
+step hlint
+hlint src app test
+
+step build
+cabal build all --enable-tests
+
+step weeder
+weeder
+
+step tests
+cabal test

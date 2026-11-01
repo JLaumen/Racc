@@ -33,4 +33,8 @@ Design phase; the compiler is a stub (`compile` in `src/Racc.hs`).
 - `cabal test`: golden tests. Each `test/golden/X.racc` is compiled with
   `cc`, run, and its output compared with `X.out`; `--test-options=--accept`
   writes the `.out` files.
-- Warnings are errors (`racc.cabal`); fix them, don't silence them.
+- `scripts/check`: everything CI runs: ormolu, cabal-gild, hlint, build,
+  weeder, tests. Run it before committing. Tool versions are pinned in
+  `.github/workflows/ci.yml`; install them with `cabal install`.
+- Warnings are errors (`racc.cabal`); fix them and hlint and weeder
+  findings, don't silence them.

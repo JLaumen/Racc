@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: haskell-actions/setup@v2
+        id: setup
+        with:
+          ghc-version: "9.10.3"
+          cabal-version: "3.16.1.0"
+
+      - name: Plan
+        run: |
+          cabal update
+          cabal build all --enable-tests --dry-run
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: store-${{ hashFiles('dist-newstyle/cache/plan.json', '.github/workflows/ci.yml') }}
+          restore-keys: store-
+
+      - name: Install tools
+        run: cabal install --installdir="$HOME/.local/bin" --overwrite-policy=always $TOOLS
+        env:
+          TOOLS: ormolu-0.8.0.2 hlint-3.10 cabal-gild-1.8.4.2 weeder-2.11.0
+
+      - run: scripts/check
