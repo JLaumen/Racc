@@ -35,9 +35,12 @@ twice x =
   copy y = (y, x)
   copy x
 
--- Polymorphic recursion, with a signature.
-nest : a -> Int
-nest x = nest (x, x)
+-- Polymorphic recursion, with a signature, at types that don't grow
+-- around a cycle.
+swapped : a -> b -> Int
+swapped x y = swapped y x
+outside : a -> b -> Int
+outside x _ = outside 1 (x, x)
 
 operators a b = (b * 2 / 3 % 4 ** 5 + -a, ~a & b | a ^ b << 1 >> 2, not (a < b) and a <= b or a > b, a >= b)
 equality x y = x == y != True

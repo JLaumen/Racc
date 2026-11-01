@@ -66,6 +66,9 @@ the syntax is in `GRAMMAR.md`.
   are not.
 - A signature may give a more specific type than the inferred one, not a
   more general one.
+- With a signature, a function may call itself, directly or through
+  others, at a different type, but not at types that grow without end, such
+  as `f x = f (x, x)`.
 - The type variables of a signature are in scope in the function's body,
   so local signatures can refer to them. A state variable's signature can
   only use those.

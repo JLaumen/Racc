@@ -24,17 +24,20 @@ twice : a -> (a, a)
   x.13 : a
   copy.14 : a -> (a, a)
   y.15 : a
-nest : a -> Int
+swapped : a -> b -> Int
   x.16 : a
+  y.17 : b
+outside : a -> b -> Int
+  x.18 : a
 operators : Int -> Int -> (Int, Int, Bool, Bool)
-  a.17 : Int
-  b.18 : Int
+  a.19 : Int
+  b.20 : Int
 equality : Bool -> Bool -> Bool
-  x.19 : Bool
-  y.20 : Bool
+  x.21 : Bool
+  y.22 : Bool
 patterns : Option Int -> Int
-  o.21 : Option Int
-  n.22 : Int
-  _s.23 : Option Int
+  o.23 : Option Int
+  n.24 : Int
+  _s.25 : Option Int
 unit : Void -> Void
 main : Void

@@ -1,0 +1,4 @@
+test/errors/growing-type.racc:5:7: error: `h` is used here at `(b, b) -> Int`, so its type grows with each recursive call
+  |
+5 | k y = h (y, y)
+  |       ^

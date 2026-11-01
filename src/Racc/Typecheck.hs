@@ -10,7 +10,7 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Control.Monad.Trans.State.Strict (State, gets, modify, runState, state)
 import Data.ByteString.Char8 qualified as BC
-import Data.Containers.ListUtils (nubOrd)
+import Data.Containers.ListUtils (nubOrd, nubOrdOn)
 import Data.Foldable (for_, toList, traverse_)
 import Data.Graph (flattenSCC, stronglyConnComp)
 import Data.IntMap.Strict (IntMap)
@@ -68,7 +68,10 @@ data S = S
     -- | Loops that a `break` leaves.
     broken :: IntSet,
     -- | Each definition and parameter, with its top-level definition.
-    typed :: [(Name, Ref, Ty)]
+    typed :: [(Name, Ref, Ty)],
+    -- | Each use of a generalized definition: its type there, and what its
+    -- type variables became.
+    uses :: [(Span, Ref, Ty, [(Int, Ty)])]
   }
 
 type T = State S
@@ -100,8 +103,7 @@ data Unit = UDef Def | UStmt (Located (Stmt Ref))
 typecheck :: [Located (Decl Ref)] -> Result String
 typecheck ds = (diagnostics st, out <$ guard (not (any isError (diagnostics st))))
   where
-    (out, st) = runState (program ds) (S 0 IntMap.empty IntMap.empty IntMap.empty [] [] IntSet.empty [])
-    isError (Diagnostic sev _ _) = sev == Error
+    (out, st) = runState (program ds) (S 0 IntMap.empty IntMap.empty IntMap.empty [] [] IntSet.empty [] [])
 
 program :: [Located (Decl Ref)] -> T String
 program ds = do
@@ -122,6 +124,8 @@ program ds = do
       deps (Def _ eqs) = [g | Located _ e <- toList eqs, g@(Global _) <- toList e, Set.member g unsigned]
       env1 = env0 {values = Map.fromList [(defRef d, s) | (d, Just (s, _)) <- sigs]}
   foldM_ (\e -> defGroup e . flattenSCC) env1 (stronglyConnComp [(x, defRef d, deps d) | x@(d, _) <- sigs])
+  ok <- gets (not . any isError . diagnostics)
+  when ok growing
   ws <- gets discarded
   for_ ws $ \(s, t) ->
     zonk t >>= \case
@@ -132,6 +136,20 @@ program ds = do
     let entries = sortOn (\(r, _) -> case r of Global _ -> -1; Local _ i -> i) (Map.findWithDefault [] (refName (defRef d)) byOwner)
     zs <- traverse (zonk . snd) entries
     pure [(case r of Global _ -> ""; Local _ _ -> "  ") <> variable r <> " : " <> s | ((r, _), s) <- zip entries (pretty zs)]
+
+-- | Reports uses that make the types of a recursion grow each time around
+-- it, which would need infinitely many types. Each use makes an edge from
+-- each type variable in what a type variable becomes to that one; it grows
+-- unless it becomes just that variable. A growing edge in a cycle is an
+-- error.
+growing :: T ()
+growing = do
+  us <- gets uses >>= traverse (\(s, r, t, m) -> (s,r,,) <$> zonk t <*> traverse (traverse zonk) m)
+  let edges = [(a, b, (s, (r, t)), varId u /= [a]) | (s, r, t, m) <- us, (b, u) <- m, a <- concatMap varId (vars u)]
+      next = IntMap.fromListWith (<>) [(a, [b]) | (a, b, _, _) <- edges]
+      comp = IntMap.fromList [(a, k) | (k, c) <- zip [0 :: Int ..] (stronglyConnComp [(a, a, bs) | (a, bs) <- IntMap.toList next]), a <- flattenSCC c]
+  for_ (nubOrdOn fst [use | (a, b, use, True) <- edges, IntMap.lookup a comp == IntMap.lookup b comp]) $ \(s, (r, t)) ->
+    report s (quote (refName r) <> " is used here at " <> concatMap quoted (pretty [t]) <> ", so its type grows with each recursive call")
 
 -- | Groups signatures and equations into definitions.
 units :: [Item] -> [Unit]
@@ -229,7 +247,8 @@ generalize env t = do
   ls <- gets levels
   pure (Forall (nubOrd [i | v <- vars t', i <- varId v, IntMap.findWithDefault 0 i ls > level env]) t')
 
-instantiate :: Env -> Scheme -> T Ty
+-- | A type of a scheme, with what its type variables became.
+instantiate :: Env -> Scheme -> T (Ty, [(Int, Ty)])
 instantiate env (Forall is t) = do
   m <- IntMap.fromList <$> traverse (\i -> (i,) <$> fresh env) is
   let go = \case
@@ -238,7 +257,7 @@ instantiate env (Forall is t) = do
         TCon c as -> TCon c (map go as)
         TFun a b -> TFun (go a) (go b)
         TTuple as -> TTuple (map go as)
-  pure (go t)
+  pure (go t, IntMap.toList m)
 
 -- * Statements
 
@@ -353,8 +372,11 @@ expr env t (Located s e) = case e of
   Var (Global "print") -> do
     a <- printableVar env s "`print`"
     unify s t (TFun a voidTy)
-  Var r -> instantiate env (values env Map.! r) >>= unify s t
-  Con c -> instantiate env (constructors env Map.! c) >>= unify s t
+  Var r -> do
+    (u, m) <- instantiate env (values env Map.! r)
+    unless (null m) (modify (\st -> st {uses = (s, r, u, m) : uses st}))
+    unify s t u
+  Con c -> instantiate env (constructors env Map.! c) >>= unify s t . fst
   Lit _ -> unify s t intTy
   Unit -> unify s t voidTy
   Tuple es -> do
@@ -400,7 +422,7 @@ pat env t (Located s p) = case p of
   PLit _ -> env <$ unify s t intTy
   PUnit -> env <$ unify s t voidTy
   PCon c ps -> do
-    u <- instantiate env (constructors env Map.! c)
+    (u, _) <- instantiate env (constructors env Map.! c)
     let (args, res) = split ps u
     unify s t res
     foldM (\e (q, a) -> pat e a q) env args
@@ -537,6 +559,9 @@ printableVar env s what = do
 
 levelOf :: Int -> T Int
 levelOf i = gets (IntMap.findWithDefault 0 i . levels)
+
+isError :: Diagnostic -> Bool
+isError (Diagnostic sev _ _) = sev == Error
 
 report :: Span -> String -> T ()
 report = diagnose Error

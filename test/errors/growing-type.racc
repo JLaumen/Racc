@@ -1,0 +1,7 @@
+-- The type of `h` would grow with each call around the recursion.
+h : a -> Int
+h x = k x
+k : b -> Int
+k y = h (y, y)
+
+main = print 1
