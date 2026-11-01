@@ -1,0 +1,4 @@
+test/errors/number-letter.racc:1:5: error: invalid number literal `12abc`
+  |
+1 | x = 12abc
+  |     ^^^^^

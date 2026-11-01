@@ -15,6 +15,7 @@ common shared
     -Wno-unsafe
     -Wno-missed-specialisations
     -Wno-all-missed-specialisations
+    -Wno-missing-kind-signatures
     -fwrite-ide-info
 
   build-depends: base
@@ -22,19 +23,26 @@ common shared
 library
   import: shared
   hs-source-dirs: src
-  exposed-modules: Racc
+  build-depends: bytestring
+  exposed-modules:
+    Racc
+    Racc.Diagnostic
+    Racc.Lexer
 
 executable racc
   import: shared
   hs-source-dirs: app
   main-is: Main.hs
-  build-depends: racc
+  build-depends:
+    bytestring,
+    racc,
 
-test-suite golden
+test-suite tests
   import: shared
   type: exitcode-stdio-1.0
   hs-source-dirs: test
-  main-is: Golden.hs
+  main-is: Main.hs
+  other-modules: LexerTests
   build-depends:
     bytestring,
     filepath,
@@ -42,4 +50,5 @@ test-suite golden
     racc,
     tasty,
     tasty-golden,
+    tasty-hunit,
     temporary,

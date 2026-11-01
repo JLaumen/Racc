@@ -1,0 +1,4 @@
+test/errors/non-ascii.racc:1:8: error: non-ASCII character outside a comment
+  |
+1 | x = café -- café
+  |        ^

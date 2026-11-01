@@ -1,0 +1,4 @@
+test/errors/tab.racc:2:1: error: tab character; indent with spaces
+  |
+2 | 	x
+  | ^

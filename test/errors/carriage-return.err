@@ -1,0 +1,4 @@
+test/errors/carriage-return.racc:1:6: error: carriage return without a line feed
+  |
+1 | x = 1
+  |      ^

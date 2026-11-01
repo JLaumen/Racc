@@ -14,6 +14,8 @@ emits C.
   - Design: one way to do each thing. Point out redundancy or overlap in the
     language when you see it.
   - Code: as little code as possible, kept clean.
+  - Tests: cover every case and edge case, with as little test code as
+    possible; one test per behavior, table-driven where it fits.
   - Documentation: concise, and only what the reader of that file needs.
     `README.md` is for users, `DESIGN.md` and `GRAMMAR.md` for users and
     agents, this file for agents. Say each thing in one place.
@@ -33,16 +35,33 @@ emits C.
 
 ## Status
 
-Design phase; the compiler is a stub (`compile` in `src/Racc.hs`).
+The lexer is done; parsing and later phases are not (`compile` in
+`src/Racc.hs`).
 
 ## Build
 
 - `cabal build`; `cabal run racc -- FILE.racc` prints C to stdout.
-- `cabal test`: golden tests. Each `test/golden/X.racc` is compiled with
-  `cc`, run, and its output compared with `X.out`; `--test-options=--accept`
-  writes the `.out` files.
+- `cabal test`: unit tests plus golden tests. Each `test/run/X.racc` is
+  compiled with `cc`, run, and its output compared with `X.out`; each
+  `test/errors/X.racc` must fail with the message in `X.err`.
+  `--test-options=--accept` writes missing or changed golden files.
 - `scripts/check`: everything CI runs: ormolu, cabal-gild, hlint, build,
   weeder, tests. Run it before committing. Tool versions are pinned in
   `.github/workflows/ci.yml`; install them with `cabal install`.
 - Warnings are errors (`racc.cabal`); fix them and hlint and weeder
   findings, don't silence them.
+
+## Planned tests
+
+Tell the user when work reaches the point where one of these should be
+added; move it to Build once added.
+
+- Coverage report (`cabal test --enable-coverage`): on demand, to check
+  that tests reach all code. Available now, not yet run.
+- Property tests: with the parser. "The lexer and parser never crash on any
+  input" is cheap; a print-then-parse round trip needs a pretty-printer and
+  a generator, so ask first.
+- C sanitizers and warnings in the run goldens
+  (`cc -fsanitize=address,undefined -Wall -Werror`): with code generation.
+- Benchmarks (tasty-bench) for compile speed and generated code: once
+  there is something worth comparing over time.

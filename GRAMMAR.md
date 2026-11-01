@@ -6,7 +6,7 @@ version 0.1. Meaning and restrictions are in `DESIGN.md`.
 ## Lexical structure
 
 - Comments start with `--` and run to the end of the line.
-- Only spaces are whitespace; a tab is an error.
+- Only spaces are whitespace; a tab is an error. Lines end with LF or CRLF.
 - Names and literals:
 
   ```
@@ -16,7 +16,8 @@ version 0.1. Meaning and restrictions are in `DESIGN.md`.
   ```
 
   Lowercase names are variables, functions, and type variables; uppercase
-  names are types and constructors.
+  names are types and constructors. A letter, `_`, or `'` directly after
+  an `INT` is an error: `12abc`, `1__0`, and `1_` are not numbers.
 - Keywords:
 
   ```
@@ -36,7 +37,8 @@ Two tokens depend on the whitespace around them:
 ## Layout
 
 - A block is the lines after a header line that are indented further than
-  the header. All lines of a block start at the same column.
+  the header. All lines of a block start at the same column, and a line
+  indented less than its block must line up with an enclosing block.
 - Blank lines and comment-only lines are ignored.
 - Inside `( )`, `[ ]`, and `{ }`, line breaks and indentation are ignored.
   This is the only way to continue a line.
