@@ -56,6 +56,8 @@ The lexer and parser are done; later phases are not (`compile` in
   `test/errors/X.racc` must fail with the rendered error in `X.err`. Unit
   tests check every error message; the error goldens only cover rendering.
   `--test-options=--accept` writes missing or changed golden files.
+  A property test checks that lexing and parsing never crash or hang, on
+  the unit test inputs with random edits.
 - `scripts/check`: everything CI runs: ormolu, cabal-gild, hlint, build,
   weeder, tests. Run it before committing. Tool versions are pinned in
   `.github/workflows/ci.yml`; install them with `cabal install`.
@@ -69,8 +71,7 @@ added; move it to Build once added.
 
 - Coverage report (`cabal test --enable-coverage`): on demand, to check
   that tests reach all code. Available now, not yet run.
-- Property tests: with the parser. "The lexer and parser never crash on any
-  input" is cheap; a print-then-parse round trip needs a pretty-printer and
+- Round-trip property test (print, then parse): needs a pretty-printer and
   a generator, so ask first.
 - C sanitizers and warnings in the run goldens
   (`cc -fsanitize=address,undefined -Wall -Werror`): with code generation.

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LexerTests (tests) where
+module LexerTests (tests, keywords, symbols) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BC
@@ -34,14 +34,15 @@ oneLine =
     -- negation without a preceding operand, or with whitespace only before
     ("-a f -b (-c) * -d, if -e", [TNeg, l "a", l "f", TNeg, l "b", s "(", TNeg, l "c", s ")", s "*", TNeg, l "d", s ",", k "if", TNeg, l "e"])
   ]
-  where
-    symbols :: ByteString
-    symbols = "-> => == != <= >= << >> ** .. <- = : | , ( ) [ ] { } \\ + * / % < > & ^ ~"
-    keywords :: [ByteString]
-    keywords =
-      ["and", "as", "break", "by", "continue", "downto", "effects", "elif", "else", "ensures", "for"]
-        <> ["from", "if", "in", "invariant", "match", "modifies", "not", "or", "otherwise", "pass"]
-        <> ["requires", "result", "return", "state", "then", "to", "type", "until", "while", "yield"]
+
+symbols :: ByteString
+symbols = "-> => == != <= >= << >> ** .. <- = : | , ( ) [ ] { } \\ + * / % < > & ^ ~"
+
+keywords :: [ByteString]
+keywords =
+  ["and", "as", "break", "by", "continue", "downto", "effects", "elif", "else", "ensures", "for"]
+    <> ["from", "if", "in", "invariant", "match", "modifies", "not", "or", "otherwise", "pass"]
+    <> ["requires", "result", "return", "state", "then", "to", "type", "until", "while", "yield"]
 
 files :: [(ByteString, [Token])]
 files =

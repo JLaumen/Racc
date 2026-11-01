@@ -2,10 +2,12 @@
 
 module ParserTests (tests) where
 
-import Control.Monad ((<=<))
+import Control.Monad (foldM, (<=<))
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
+import LexerTests (keywords, symbols)
 import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Pos (Pos), Span (Span))
 import Racc.Lexer (tokenize)
 import Racc.Parser (parse)
@@ -30,15 +32,20 @@ import Racc.Syntax
   )
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertBool, testCase, (@?=))
+import Test.Tasty.QuickCheck (Gen, Property, choose, elements, forAll, testProperty, withNumTests, within)
 
 tests :: TestTree
 tests =
   testGroup "parser" $
-    [testCase (show src) (parsed ("x = " <> src <> "\n") @?= Right ("(eq x () " <> e <> ")")) | (src, e) <- expressions]
-      <> [testCase (show src) (parsed ("f =\n" <> indent src) @?= Right ("(eq f () (block " <> e <> "))")) | (src, e) <- statements]
-      <> [testCase (show src) (parsed src @?= Right e) | (src, e) <- declarations]
+    [testCase (show src) (parsed src @?= Right e) | (src, e) <- accepted]
       <> [testCase (show src) (failure src @?= e) | (src, e) <- rejected]
-      <> [testCase "spans" spans]
+      <> [testCase "spans" spans, testProperty "never crashes" neverCrashes]
+
+accepted :: [(ByteString, String)]
+accepted =
+  [("x = " <> src <> "\n", "(eq x () " <> e <> ")") | (src, e) <- expressions]
+    <> [("f =\n" <> indent src, "(eq f () (block " <> e <> "))") | (src, e) <- statements]
+    <> declarations
   where
     indent = BC.unlines . map ("  " <>) . BC.lines
 
@@ -136,6 +143,23 @@ spans = do
       d @?= Span (Pos 1 1) (Pos 4 8)
       map (\(Located sp _) -> sp) (toList ss) @?= [Span (Pos 2 3) (Pos 3 6), Span (Pos 4 3) (Pos 4 8)]
     _ -> assertBool "unexpected tree" False
+
+-- | Lexing and parsing end, without an exception, on the test inputs with a
+-- few random edits, so that most inputs get deep into the parser.
+neverCrashes :: Property
+neverCrashes = withNumTests 10000 $ forAll mutant $ \src -> within 1000000 (length (show (parsed src)) `seq` True)
+  where
+    mutant :: Gen ByteString
+    mutant = do
+      src <- elements (map fst (accepted <> rejected))
+      n <- choose (1, 3 :: Int)
+      foldM (const . edit) src [1 .. n]
+    edit src = do
+      i <- choose (0, BS.length src)
+      j <- choose (i, min (BS.length src) (i + 3))
+      p <- elements pieces
+      pure (BS.take i src <> p <> BS.drop j src)
+    pieces = ["", "\n", "\n  ", " ", "  ", "x", "Y", "1", "_", "\t", "\r", "\195\169", "--"] <> keywords <> BC.words symbols
 
 failure :: ByteString -> String
 failure = either (\(Diagnostic (Span (Pos l c) _) m) -> show l <> ":" <> show c <> ": " <> m) (const "accepted") . (parse <=< tokenize)

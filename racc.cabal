@@ -59,4 +59,5 @@ test-suite tests
     tasty,
     tasty-golden,
     tasty-hunit,
+    tasty-quickcheck,
     temporary,
