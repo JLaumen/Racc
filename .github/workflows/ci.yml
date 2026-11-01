@@ -9,7 +9,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: haskell-actions/setup@v2
         id: setup
@@ -22,7 +22,7 @@ jobs:
           cabal update
           cabal build all --enable-tests --dry-run
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ${{ steps.setup.outputs.cabal-store }}
           key: store-${{ hashFiles('dist-newstyle/cache/plan.json', '.github/workflows/ci.yml') }}
