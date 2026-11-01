@@ -25,4 +25,12 @@ emits C.
 
 ## Status
 
-Design phase; no compiler code yet.
+Design phase; the compiler is a stub (`compile` in `src/Racc.hs`).
+
+## Build
+
+- `cabal build`; `cabal run racc -- FILE.racc` prints C to stdout.
+- `cabal test`: golden tests. Each `test/golden/X.racc` is compiled with
+  `cc`, run, and its output compared with `X.out`; `--test-options=--accept`
+  writes the `.out` files.
+- Warnings are errors (`racc.cabal`); fix them, don't silence them.

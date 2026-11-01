@@ -1,0 +1,39 @@
+cabal-version: 3.12
+name:          racc
+version:       0.1.0.0
+build-type:    Simple
+
+common shared
+  default-language: GHC2024
+  -- All warnings that concern code quality, as errors.
+  ghc-options:
+    -Weverything -Werror
+    -Wno-implicit-prelude
+    -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe
+    -Wno-missed-specialisations -Wno-all-missed-specialisations
+  build-depends:    base
+
+library
+  import:          shared
+  hs-source-dirs:  src
+  exposed-modules: Racc
+
+executable racc
+  import:         shared
+  hs-source-dirs: app
+  main-is:        Main.hs
+  build-depends:  racc
+
+test-suite golden
+  import:         shared
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is:        Golden.hs
+  build-depends:
+    , bytestring
+    , filepath
+    , process
+    , racc
+    , tasty
+    , tasty-golden
+    , temporary
