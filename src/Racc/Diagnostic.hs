@@ -22,17 +22,22 @@ data Located a = Located !Span !a
 data Diagnostic = Diagnostic !Span String
   deriving stock (Show)
 
--- | Location, message, and the source line with the span underlined.
-render :: FilePath -> ByteString -> Diagnostic -> String
-render path src (Diagnostic (Span s e) msg) =
+-- | Location, message, and the source line with the span underlined; in
+-- colour (ANSI escape codes) if the flag is set.
+render :: Bool -> FilePath -> ByteString -> Diagnostic -> String
+render colour path src (Diagnostic (Span s e) msg) =
   intercalate
     "\n"
-    [ path <> ":" <> show (line s) <> ":" <> show (col s) <> ": error: " <> msg,
-      gutter,
-      num <> " | " <> text,
-      gutter <> " " <> replicate (col s - 1) ' ' <> replicate width '^'
+    [ bold (path <> ":" <> show (line s) <> ":" <> show (col s) <> ":") <> " " <> red "error:" <> " " <> bold msg,
+      blue gutter,
+      blue (num <> " |") <> " " <> text,
+      blue gutter <> " " <> replicate (col s - 1) ' ' <> red (replicate width '^')
     ]
   where
+    style code x = if colour then "\ESC[" <> code <> "m" <> x <> "\ESC[0m" else x
+    bold = style "1"
+    red = style "1;31"
+    blue = style "1;34"
     num = show (line s)
     gutter = replicate (length num) ' ' <> " |"
     text = concatMap (takeWhile (/= '\r') . BC.unpack) (take 1 (drop (line s - 1) (BC.lines src)))

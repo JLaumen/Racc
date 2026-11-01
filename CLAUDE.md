@@ -56,7 +56,8 @@ The lexer and parser are done; later phases are not (`compile` in
   Each `test/parse/X.racc` is parsed and its tree compared with `X.tree`;
   each `test/run/X.racc` is compiled with `cc`, run, and its output
   compared with `X.out`; each `test/errors/X.racc` must fail with the
-  error in `X.err`, one file per way to fail. Unit tests cover only what
+  error in `X.err`, one file per way to fail; `tuple-close.colour` has
+  that error in colour. Unit tests cover only what
   files can't show (tokens, spans). A property test checks that lexing and
   parsing never crash or hang, on the golden inputs with random edits.
   `--test-options=--accept` writes missing or changed golden files.

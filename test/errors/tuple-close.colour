@@ -1,0 +1,4 @@
+[1mtest/errors/tuple-close.racc:1:10:[0m [1;31merror:[0m [1mexpected `,` or `)` after `2`, found the end of the line[0m
+[1;34m  |[0m
+[1;34m1 |[0m x = (1, 2
+[1;34m  |[0m          [1;31m^[0m

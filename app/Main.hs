@@ -3,8 +3,9 @@ module Main (main) where
 import Data.ByteString qualified as BS
 import Racc (compile, parseTree)
 import Racc.Diagnostic (render)
-import System.Environment (getArgs)
+import System.Environment (getArgs, lookupEnv)
 import System.Exit (die)
+import System.IO (hIsTerminalDevice, stderr)
 
 main :: IO ()
 main = do
@@ -16,4 +17,10 @@ main = do
   where
     output f file = do
       src <- BS.readFile file
-      either (die . render file src) putStr (f src)
+      either (\d -> colour >>= \c -> die (render c file src d)) putStr (f src)
+    -- On a terminal that shows colour, unless NO_COLOR is set (no-color.org).
+    colour = do
+      tty <- hIsTerminalDevice stderr
+      term <- lookupEnv "TERM"
+      noColour <- lookupEnv "NO_COLOR"
+      pure (tty && term /= Just "dumb" && maybe True null noColour)

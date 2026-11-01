@@ -5,7 +5,8 @@
 -- * test/parse/X.racc is parsed and its tree compared with X.tree; so is the
 --   example of README.md, with README.tree.
 -- * test/run/X.racc is compiled, run, and its output compared with X.out.
--- * test/errors/X.racc must fail to compile with the error in X.err.
+-- * test/errors/X.racc must fail to compile with the error in X.err; one of
+--   them also in colour, in X.colour.
 module Main (main) where
 
 import Data.ByteString (ByteString)
@@ -38,8 +39,13 @@ main = do
           goldenVsString "README" "test/parse/README.tree" (LBS.pack <$> tree "README.md" readme)
             : map (golden ".tree" tree) parses,
         testGroup "run" (map (golden ".out" run) runs),
-        testGroup "errors" (map (golden ".err" failure) errors)
+        testGroup "errors" $
+          goldenVsString "colour" (replaceExtension colour ".colour") (LBS.pack <$> (failure True colour =<< BS.readFile colour))
+            : map (golden ".err" (failure False)) errors
       ]
+
+colour :: FilePath
+colour = "test/errors/tuple-close.racc"
 
 -- | The first code block of a Markdown file.
 example :: ByteString -> ByteString
@@ -51,14 +57,14 @@ golden ext test file =
 
 run :: FilePath -> ByteString -> IO String
 run file src = do
-  c <- either (fail . render file src) pure (compile src)
+  c <- either (fail . render False file src) pure (compile src)
   withSystemTempDirectory "racc" $ \dir -> do
     let exe = dir </> "a.out"
     _ <- readProcess "cc" ["-x", "c", "-o", exe, "-"] c
     readProcess exe [] ""
 
 tree :: FilePath -> ByteString -> IO String
-tree file src = either (fail . render file src) pure (parseTree src)
+tree file src = either (fail . render False file src) pure (parseTree src)
 
-failure :: FilePath -> ByteString -> IO String
-failure file src = either (pure . (<> "\n") . render file src) (const (fail "compiled without error")) (compile src)
+failure :: Bool -> FilePath -> ByteString -> IO String
+failure c file src = either (pure . (<> "\n") . render c file src) (const (fail "compiled without error")) (compile src)
