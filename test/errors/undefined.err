@@ -1,0 +1,4 @@
+test/errors/undefined.racc:1:5: error: `y` is not defined
+  |
+1 | f = y
+  |     ^

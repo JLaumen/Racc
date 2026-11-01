@@ -74,7 +74,7 @@ clause       ::= 'modifies' param { ',' param } NEWLINE           -- not in 0.1
                | 'ensures' expr NEWLINE                           -- not in 0.1
 param        ::= LOWER | INT
 
-function     ::= equation { equation }        -- same name, consecutive
+function     ::= equation { equation }        -- same name, consecutive, with parameters
 equation     ::= LOWER { apat } rhs
 rhs          ::= '=' body
                | NEWLINE INDENT guardEq { guardEq } DEDENT
@@ -197,9 +197,12 @@ atype        ::= LOWER | UPPER
 - In brackets, `|` starts a comprehension only if a generator `p <- e`
   follows it; otherwise it is bitwise or.
 - `x = e` is an `equation`, not a `pattern` binding.
-- Consecutive equations with the same name form one function, also in a
-  body.
+- Consecutive equations with parameters and the same name form one
+  function, also in a body. An equation without parameters defines or
+  assigns a value on its own, so `x = 1` followed by `x = 2` is an error.
 - `result` may only appear in `ensures`.
+- `break n` and `continue n` apply to the `n`th loop around them in the same
+  function, counting from the innermost; `n` is at least 2.
 
 ## Not yet designed
 

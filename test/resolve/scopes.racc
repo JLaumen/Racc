@@ -1,0 +1,66 @@
+-- Top-level names are visible everywhere.
+even n = if n == 0 then True else odd (n - 1)
+odd n = if n == 0 then False else even (n - 1)
+
+n = 1
+
+-- A local may shadow a top-level name; its own definition sees the
+-- top-level one.
+shadow =
+  n = n + 1
+  n
+
+-- A signature, consecutive equations with guards, and a recursive local
+-- function, whose parameter shadows a local of the enclosing function.
+local : Int -> Int
+local x =
+  y = x
+  f : Int -> Int
+  f 0 = y
+  f y
+    | y > 0 = f (y - 1)
+    | otherwise = 0
+  f x
+
+-- Assigning state, also from a local function, where `a = e` shadows the
+-- enclosing parameter.
+algorithm a =
+  state
+    s : Int
+    s = a
+    t = s
+  (s, t) = (t, s)
+  add k =
+    s = s + k
+    a = k
+    a
+  add 1
+  s + t
+
+-- A binding does not escape its block.
+blocks c =
+  if c
+    v = 1
+    print v
+  else
+    v = 2
+    print v
+  v = 3
+  v
+
+loops m =
+  for i in 1 to m
+    while i > 0
+      if i == 2
+        break 2
+      elif i == 3
+        continue 2
+      break
+    continue
+  m
+
+patterns p =
+  (a, b) = p
+  match a
+    (c, 0) or (0, c) -> c + b
+    d as e -> d + e

@@ -1,0 +1,4 @@
+test/errors/break-outside-loop.racc:2:3: error: `break` must be inside a loop
+  |
+2 |   break
+  |   ^^^^^

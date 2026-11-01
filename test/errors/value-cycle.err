@@ -1,0 +1,4 @@
+test/errors/value-cycle.racc:1:1: error: the value `a` depends on itself
+  |
+1 | a = f 1
+  | ^

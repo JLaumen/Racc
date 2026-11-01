@@ -1,0 +1,4 @@
+test/errors/equation-parameters.racc:2:1: error: the equations of `f` have different numbers of parameters
+  |
+2 | f _ _ = 2
+  | ^

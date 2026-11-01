@@ -1,0 +1,4 @@
+test/errors/type-defined-twice.racc:3:6: error: `T` is already defined
+  |
+3 | type T = Int
+  |      ^

@@ -1,0 +1,3 @@
+f p =
+  match p
+    (a, 0) or (0, b) -> a

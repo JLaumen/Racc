@@ -11,7 +11,7 @@ import Data.ByteString.Unsafe qualified as BU
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit, ord)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
-import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Pos (Pos, col, line), Span (Span))
+import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Pos (Pos, col, line), Severity (Error), Span (Span))
 
 data Token
   = TLower ByteString
@@ -104,7 +104,7 @@ scan src = go [] 0 1 0
             | otherwise -> err i (i + 1) ("unexpected character `" <> [c] <> "`")
       where
         pos j = Pos ln (j - ls + 1)
-        err j k msg = Left (Diagnostic (Span (pos j) (pos k)) msg)
+        err j k msg = Left (Diagnostic Error (Span (pos j) (pos k)) msg)
         emit j t = go (Located (Span (pos i) (pos j)) t : acc) j ln ls
         name con j
           | text == "_" = emit j (TSymbol text)
@@ -152,7 +152,7 @@ layout = go [] (1 :| []) 0 Nothing
           LT -> case NE.span (> col s) stack of
             (popped, top : more)
               | top == col s -> continue (brk <> (here TDedent <$ popped)) (top :| more)
-            _ -> Left (Diagnostic sp "indentation does not match any enclosing block")
+            _ -> Left (Diagnostic Error sp "indentation does not match any enclosing block")
       | otherwise = continue [] stack
       where
         newLine = maybe True (\(Located (Span _ pe) _) -> line pe < line s) prev

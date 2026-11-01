@@ -1,0 +1,4 @@
+test/errors/or-pattern.racc:3:5: error: each alternative must bind the same names
+  |
+3 |     (a, 0) or (0, b) -> a
+  |     ^^^^^^^^^^^^^^^^

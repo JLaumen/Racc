@@ -1,0 +1,4 @@
+test/errors/assigned-twice.racc:3:3: error: `x` is not a state variable, so it can't be assigned
+  |
+3 |   x = 2
+  |   ^

@@ -1,0 +1,14 @@
+type Shape a
+  Circle a
+  Square a a
+
+type Pair = (Int, Bool)
+
+area : Shape Int -> Int
+area s =
+  match s
+    Circle r -> 3 * r * r
+    Square w h -> w * h
+
+flag : Pair
+flag = (area (Circle 2), True)

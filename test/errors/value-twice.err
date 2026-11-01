@@ -1,0 +1,4 @@
+test/errors/value-twice.racc:2:1: error: `x` is already defined
+  |
+2 | x = 2
+  | ^

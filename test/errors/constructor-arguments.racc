@@ -1,0 +1,3 @@
+f x =
+  match x
+    True y -> y

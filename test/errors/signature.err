@@ -1,0 +1,14 @@
+test/errors/signature.racc:2:1: error: the signature of `f` must be directly followed by its definition
+  |
+2 | f : Int
+  | ^
+
+test/errors/signature.racc:7:5: error: the signature of `s` must be directly followed by its definition
+  |
+7 |     s : Int
+  |     ^
+
+test/errors/signature.racc:9:3: error: the signature of `x` must be directly followed by its definition
+  |
+9 |   x : Int
+  |   ^

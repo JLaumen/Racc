@@ -1,0 +1,4 @@
+test/errors/type-parameter-twice.racc:1:10: error: `a` is already defined
+  |
+1 | type T a a = a
+  |          ^

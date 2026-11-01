@@ -13,7 +13,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromMaybe, listToMaybe)
-import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Pos (Pos), Span (Span))
+import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Pos (Pos), Severity (Error), Span (Span), quote)
 import Racc.Lexer (Token (TDedent, TEnd, TIndent, TIndex, TInt, TKeyword, TLower, TNeg, TNewline, TSymbol, TUpper))
 import Racc.Syntax
   ( BinaryOp (Add, And, BitAnd, BitOr, BitXor, Div, Mod, Mul, Or, Pow, ShiftLeft, ShiftRight, Sub),
@@ -42,12 +42,12 @@ data S = S !Pos !(Maybe Token) [Located Token]
 
 type P = StateT S (Either Diagnostic)
 
-parse :: [Located Token] -> Either Diagnostic [Located Decl]
+parse :: [Located Token] -> Either Diagnostic [Located (Decl Name)]
 parse ts = evalStateT (manyWhile (/= TEnd) (located decl)) (S (Pos 1 1) Nothing ts)
 
 -- * Declarations
 
-decl :: P Decl
+decl :: P (Decl Name)
 decl =
   peek >>= \case
     TKeyword "type" -> next >> typeDecl
@@ -56,7 +56,7 @@ decl =
       if t == TSymbol ":" then SignatureDecl <$> signature else EquationDecl <$> equation
     _ -> expected "a declaration"
 
-signature :: P Signature
+signature :: P (Signature Name)
 signature = do
   n <- name
   next
@@ -68,13 +68,13 @@ signature = do
     TIndent -> next >> notIn01 "signature clauses are"
     _ -> pure (Signature n t)
 
-equation :: P Equation
+equation :: P (Equation Name)
 equation = do
   n <- name
   ps <- manyWhile startsApat apat
   Equation n ps <$> rhs "=" True
 
-typeDecl :: P Decl
+typeDecl :: P (Decl Name)
 typeDecl = do
   n <- upper "a type name"
   vs <- manyWhile isLower name
@@ -87,7 +87,7 @@ typeDecl = do
 
 -- | The rest of an equation (`sep` is `=`) or of a match arm (`sep` is `->`).
 -- `st` tells whether a block may start with `state`.
-rhs :: ByteString -> Bool -> P Rhs
+rhs :: ByteString -> Bool -> P (Rhs Name)
 rhs sep st = do
   ts <- traverse peekAt [0, 1, 2]
   case ts of
@@ -104,13 +104,13 @@ rhs sep st = do
       expect (TSymbol sep) (quote sep)
       (g,) <$> body st
 
-body :: Bool -> P Body
+body :: Bool -> P (Body Name)
 body st =
   peek >>= \case
     TNewline -> next >> BlockBody <$> block st
     _ -> ExprBody <$> expr <* endLine
 
-block :: Bool -> P Block
+block :: Bool -> P (Block Name)
 block st = do
   expect TIndent "an indented block"
   sv <-
@@ -127,7 +127,7 @@ block st = do
 
 -- * Statements
 
-stmt :: P Stmt
+stmt :: P (Stmt Name)
 stmt =
   peek >>= \case
     TKeyword "if" -> do
@@ -171,7 +171,7 @@ stmt =
     int = satisfy "a number or the end of the line" (\case TInt n -> Just n; _ -> Nothing)
 
 -- | The rest of an `if` statement, after its first condition.
-ifStmt :: Located Expr -> P Stmt
+ifStmt :: Located (Expr Name) -> P (Stmt Name)
 ifStmt c = do
   b <- branch c
   bs <- manyWhile (== TKeyword "elif") (next >> expr >>= branch)
@@ -181,7 +181,7 @@ ifStmt c = do
       _ -> pure Nothing
   pure (If (b :| bs) e)
   where
-    branch :: Located Expr -> P (Located Expr, Block)
+    branch :: Located (Expr Name) -> P (Located (Expr Name), Block Name)
     branch cond = (cond,) <$> (endLine >> block False)
 
 -- | Whether the statement ahead defines something: its line contains `=`,
@@ -194,7 +194,7 @@ defines =
 
 -- * Expressions
 
-expr :: P (Located Expr)
+expr :: P (Located (Expr Name))
 expr =
   peek >>= \case
     TKeyword "if" -> do
@@ -205,7 +205,7 @@ expr =
     _ -> foldr binary notExpr [[(TKeyword "or", Or)], [(TKeyword "and", And)]]
 
 -- | The rest of `if c then a else b` that starts at `s`, after `c`.
-inlineIf :: Pos -> Located Expr -> P (Located Expr)
+inlineIf :: Pos -> Located (Expr Name) -> P (Located (Expr Name))
 inlineIf s c = do
   expect (TKeyword "then") "`then`"
   a <- expr
@@ -213,7 +213,7 @@ inlineIf s c = do
   b@(Located (Span _ e) _) <- expr
   pure (Located (Span s e) (IfExpr c a b))
 
-notExpr :: P (Located Expr)
+notExpr :: P (Located (Expr Name))
 notExpr =
   peek >>= \case
     TKeyword "not" -> prefix Not notExpr
@@ -229,7 +229,7 @@ notExpr =
         Just op -> next >> rangeExpr >>= \b -> ((op, b) :) <$> chain
         Nothing -> pure []
 
-rangeExpr :: P (Located Expr)
+rangeExpr :: P (Located (Expr Name))
 rangeExpr = do
   a <- arith
   t <- peek
@@ -244,11 +244,11 @@ rangeExpr = do
       pure (Located (cover a (fromMaybe b c)) (Range a op b c))
     Nothing -> pure a
 
-arith :: P (Located Expr)
+arith :: P (Located (Expr Name))
 arith = foldr binary unary arithOps
 
 -- | One level of left-associative binary operators.
-binary :: [(Token, BinaryOp)] -> P (Located Expr) -> P (Located Expr)
+binary :: [(Token, BinaryOp)] -> P (Located (Expr Name)) -> P (Located (Expr Name))
 binary ops sub = sub >>= go
   where
     go l =
@@ -256,7 +256,7 @@ binary ops sub = sub >>= go
         Just op -> next >> sub >>= \r -> go (Located (cover l r) (Binary op l r))
         Nothing -> pure l
 
-unary :: P (Located Expr)
+unary :: P (Located (Expr Name))
 unary =
   peek >>= \case
     TNeg -> prefix Neg unary
@@ -267,7 +267,7 @@ unary =
         TSymbol "**" -> next >> unary >>= \b -> pure (Located (cover a b) (Binary Pow a b))
         _ -> pure a
 
-app :: P (Located Expr)
+app :: P (Located (Expr Name))
 app = do
   f <- postfix
   args <- manyWhile startsArg arg
@@ -282,14 +282,14 @@ app = do
         TSymbol "~" -> prefix Complement postfix
         _ -> postfix
 
-postfix :: P (Located Expr)
+postfix :: P (Located (Expr Name))
 postfix = do
   a <- atom
   peek >>= \case
     TIndex -> notIn01 "indexing is"
     _ -> pure a
 
-atom :: P (Located Expr)
+atom :: P (Located (Expr Name))
 atom =
   peek >>= \case
     TInt n -> leaf (Lit n)
@@ -322,7 +322,7 @@ startsAtom = \case
   TKeyword k -> k `elem` ["from", "result"]
   _ -> False
 
-prefix :: UnaryOp -> P (Located Expr) -> P (Located Expr)
+prefix :: UnaryOp -> P (Located (Expr Name)) -> P (Located (Expr Name))
 prefix op p = do
   s <- start
   next
@@ -344,7 +344,7 @@ rangeOps = map (first TKeyword) [("to", To), ("until", Until), ("downto", Downto
 
 -- * Patterns
 
-pat :: P (Located Pattern)
+pat :: P (Located (Pattern Name))
 pat = do
   p <- conPattern
   ps <- manyWhile (== TKeyword "or") (next >> conPattern)
@@ -360,7 +360,7 @@ pat = do
         TUpper n -> located (next >> PCon n <$> manyWhile startsApat apat)
         _ -> apat
 
-apat :: P (Located Pattern)
+apat :: P (Located (Pattern Name))
 apat =
   peek >>= \case
     TSymbol "_" -> leaf PWild
@@ -507,7 +507,7 @@ parenthesized unit tuple item = located $ do
 failHere :: String -> P a
 failHere msg = do
   Located sp _ <- current
-  lift (Left (Diagnostic sp msg))
+  lift (Left (Diagnostic Error sp msg))
 
 expected :: String -> P a
 expected what = do
@@ -531,6 +531,3 @@ describe = \case
   TIndent -> "a more indented line"
   TDedent -> "a less indented line"
   TEnd -> "the end of the file"
-
-quote :: ByteString -> String
-quote b = "`" <> BC.unpack b <> "`"

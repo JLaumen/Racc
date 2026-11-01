@@ -1,0 +1,30 @@
+test/resolve/unused.racc:5:5: warning: `s` is unused
+  |
+5 |     s = 0
+  |     ^
+
+test/resolve/unused.racc:6:3: warning: `g` is unused
+  |
+6 |   g z = 0
+  |   ^
+
+test/resolve/unused.racc:6:5: warning: `z` is unused
+  |
+6 |   g z = 0
+  |     ^
+
+test/resolve/unused.racc:7:3: warning: `h` is unused
+  |
+7 |   h n = h n
+  |   ^
+
+test/resolve/unused.racc:8:4: warning: `a` is unused
+  |
+8 |   (a, _b) = (1, 2)
+  |    ^
+
+test/resolve/unused.racc:10:5: warning: `v` is unused
+   |
+10 |     v -> 0
+   |     ^
+(eq f (x.0 _y.1) (block (state (var s.2 0)) (eq g.3 (z.4) 0) (eq h.5 (n.6) (app h.5 n.6)) (bind (tuple a.7 _b.8) (tuple 1 2)) (match x.0 (v.9 0))))

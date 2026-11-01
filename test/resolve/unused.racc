@@ -1,0 +1,10 @@
+-- Unused locals of every kind, also a local function that only calls
+-- itself; names that start with `_` are exempt.
+f x _y =
+  state
+    s = 0
+  g z = 0
+  h n = h n
+  (a, _b) = (1, 2)
+  match x
+    v -> 0

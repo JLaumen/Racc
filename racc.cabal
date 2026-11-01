@@ -25,6 +25,7 @@ library
   hs-source-dirs: src
   build-depends:
     bytestring,
+    containers,
     transformers,
 
   exposed-modules:
@@ -32,6 +33,7 @@ library
     Racc.Diagnostic
     Racc.Lexer
     Racc.Parser
+    Racc.Resolve
     Racc.Syntax
 
 executable racc

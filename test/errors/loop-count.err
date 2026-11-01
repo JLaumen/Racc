@@ -1,0 +1,4 @@
+test/errors/loop-count.racc:3:11: error: the loop count after `break` must be at least 2
+  |
+3 |     break 1
+  |           ^

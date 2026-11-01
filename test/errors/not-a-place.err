@@ -1,0 +1,4 @@
+test/errors/not-a-place.racc:4:5: error: `i` is not a state variable, so it can't be assigned
+  |
+4 |     i = i + 1
+  |     ^

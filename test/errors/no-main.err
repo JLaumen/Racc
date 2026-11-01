@@ -1,0 +1,4 @@
+test/errors/no-main.racc:1:1: error: there is no `main`
+  |
+1 | f = 1
+  | ^

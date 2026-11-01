@@ -1,0 +1,9 @@
+test/errors/several.racc:1:5: error: `x` is not defined
+  |
+1 | f = x
+  |     ^
+
+test/errors/several.racc:2:5: error: `Y` is not a constructor
+  |
+2 | g = Y
+  |     ^

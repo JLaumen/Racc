@@ -1,0 +1,4 @@
+test/errors/constructor-arguments.racc:3:5: error: `True` takes 0 arguments but has 1
+  |
+3 |     True y -> y
+  |     ^^^^^^

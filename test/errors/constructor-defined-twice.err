@@ -1,0 +1,4 @@
+test/errors/constructor-defined-twice.racc:4:3: error: `A` is already defined
+  |
+4 |   A
+  |   ^

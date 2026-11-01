@@ -1,0 +1,4 @@
+test/errors/mixed-binding.racc:4:3: error: a pattern must either assign state variables or define new names, not both
+  |
+4 |   (s, t) = (1, 2)
+  |   ^^^^^^

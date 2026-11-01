@@ -1,0 +1,4 @@
+test/errors/defined-twice.racc:3:1: error: `f` is already defined
+  |
+3 | f = 3
+  | ^

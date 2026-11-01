@@ -1,0 +1,4 @@
+test/errors/not-a-type.racc:1:5: error: `Foo` is not a type
+  |
+1 | f : Foo
+  |     ^^^

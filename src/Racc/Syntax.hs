@@ -1,6 +1,10 @@
--- | The syntax tree of version 0.1, mirroring GRAMMAR.md.
+{-# LANGUAGE RoleAnnotations #-}
+
+-- | The syntax tree of version 0.1, mirroring GRAMMAR.md. Variables are
+-- names after parsing, and references after name resolution.
 module Racc.Syntax
   ( Name,
+    Variable (..),
     Decl (..),
     Signature (..),
     Equation (..),
@@ -30,61 +34,82 @@ import Racc.Diagnostic (Located (Located))
 
 type Name = ByteString
 
-data Decl
-  = SignatureDecl Signature
-  | EquationDecl Equation
+type role Decl representational
+
+data Decl v
+  = SignatureDecl (Signature v)
+  | EquationDecl (Equation v)
   | TypeDecl (Located Name) [Located Name] (NonEmpty Constructor)
   | TypeAlias (Located Name) [Located Name] (Located Type)
 
-data Signature = Signature (Located Name) (Located Type)
+type role Signature representational
+
+data Signature v = Signature (Located v) (Located Type)
 
 -- | One equation; consecutive ones are grouped into a function later.
-data Equation = Equation (Located Name) [Located Pattern] Rhs
+type role Equation representational
+
+data Equation v = Equation (Located v) [Located (Pattern v)] (Rhs v)
 
 data Constructor = Constructor (Located Name) [Located Type]
 
 -- | What follows the parameters of an equation, or the pattern of an arm.
-data Rhs = Plain Body | Guarded (NonEmpty (Guard, Body))
+type role Rhs representational
 
-data Guard = Otherwise | Guard (Located Expr)
+data Rhs v = Plain (Body v) | Guarded (NonEmpty (Guard v, Body v))
 
-data Body = ExprBody (Located Expr) | BlockBody Block
+type role Guard representational
 
-data Block = Block [StateLine] (NonEmpty (Located Stmt))
+data Guard v = Otherwise | Guard (Located (Expr v))
 
-data StateLine = StateSignature Signature | StateVar (Located Name) Body
+type role Body representational
 
-data Stmt
-  = LocalSignature Signature
+data Body v = ExprBody (Located (Expr v)) | BlockBody (Block v)
+
+type role Block representational
+
+data Block v = Block [StateLine v] (NonEmpty (Located (Stmt v)))
+
+type role StateLine representational
+
+data StateLine v = StateSignature (Signature v) | StateVar (Located v) (Body v)
+
+type role Stmt representational
+
+data Stmt v
+  = LocalSignature (Signature v)
   | -- | Also `x = e`, which may turn out to be an assignment.
-    LocalEquation Equation
-  | Bind (Located Pattern) Body
+    LocalEquation (Equation v)
+  | -- | A binding, or an assignment if the pattern's variables are places.
+    Bind (Located (Pattern v)) (Body v)
   | -- | The `if` and `elif` branches, and the `else` branch.
-    If (NonEmpty (Located Expr, Block)) (Maybe Block)
-  | While (Located Expr) Block
-  | For (Located Pattern) (Located Expr) Block
-  | Match (Located Expr) (NonEmpty (Located Pattern, Rhs))
-  | Return (Maybe (Located Expr))
+    If (NonEmpty (Located (Expr v), Block v)) (Maybe (Block v))
+  | While (Located (Expr v)) (Block v)
+  | For (Located (Pattern v)) (Located (Expr v)) (Block v)
+  | Match (Located (Expr v)) (NonEmpty (Located (Pattern v), Rhs v))
+  | Return (Maybe (Located (Expr v)))
   | Break (Maybe (Located Integer))
   | Continue (Maybe (Located Integer))
   | Pass
-  | ExprStmt (Located Expr)
+  | ExprStmt (Located (Expr v))
 
-data Expr
-  = Var Name
+type role Expr representational
+
+data Expr v
+  = Var v
   | Con Name
   | Lit Integer
   | Unit
   | -- | Two or more elements.
-    Tuple [Located Expr]
-  | App (Located Expr) (NonEmpty (Located Expr))
-  | Unary UnaryOp (Located Expr)
-  | Binary BinaryOp (Located Expr) (Located Expr)
+    Tuple [Located (Expr v)]
+  | App (Located (Expr v)) (NonEmpty (Located (Expr v)))
+  | Unary UnaryOp (Located (Expr v))
+  | Binary BinaryOp (Located (Expr v)) (Located (Expr v))
   | -- | A chain such as `a < b <= c`.
-    Compare (Located Expr) (NonEmpty (CompareOp, Located Expr))
+    Compare (Located (Expr v)) (NonEmpty (CompareOp, Located (Expr v)))
   | -- | The optional last part is the step (`by`).
-    Range (Located Expr) RangeOp (Located Expr) (Maybe (Located Expr))
-  | IfExpr (Located Expr) (Located Expr) (Located Expr)
+    Range (Located (Expr v)) RangeOp (Located (Expr v)) (Maybe (Located (Expr v)))
+  | IfExpr (Located (Expr v)) (Located (Expr v)) (Located (Expr v))
 
 data UnaryOp = Neg | Complement | Not
 
@@ -107,17 +132,19 @@ data CompareOp = Equal | NotEqual | Less | LessEqual | Greater | GreaterEqual
 
 data RangeOp = To | Until | Downto
 
-data Pattern
+type role Pattern representational
+
+data Pattern v
   = PWild
-  | PVar Name
+  | PVar v
   | PLit Integer
   | PUnit
-  | PCon Name [Located Pattern]
+  | PCon Name [Located (Pattern v)]
   | -- | Two or more elements.
-    PTuple [Located Pattern]
+    PTuple [Located (Pattern v)]
   | -- | Two or more alternatives.
-    POr (NonEmpty (Located Pattern))
-  | PAs (Located Pattern) (Located Name)
+    POr (NonEmpty (Located (Pattern v)))
+  | PAs (Located (Pattern v)) (Located v)
 
 data Type
   = TyVar Name
@@ -129,48 +156,57 @@ data Type
 
 -- * Printing as S-expressions
 
+-- | How a variable is printed.
+class Variable v where
+  variable :: v -> String
+
+instance Variable ByteString where
+  variable = BC.unpack
+
 -- | A declaration as one line, such as @(eq f (x) (+ x 1))@.
-sexpr :: Located Decl -> String
+sexpr :: (Variable v) => Located (Decl v) -> String
 sexpr (Located _ d) = case d of
   SignatureDecl s -> signature s
   EquationDecl e -> equation e
-  TypeDecl n vs cs -> node (["type", name n, node (map name vs)] <> [node (name c : map typ ts) | Constructor c ts <- toList cs])
-  TypeAlias n vs t -> node ["alias", name n, node (map name vs), typ t]
+  TypeDecl n vs cs -> node (["type", var n, node (map var vs)] <> [node (var c : map typ ts) | Constructor c ts <- toList cs])
+  TypeAlias n vs t -> node ["alias", var n, node (map var vs), typ t]
 
 node :: [String] -> String
 node xs = "(" <> unwords xs <> ")"
 
-name :: Located ByteString -> String
-name (Located _ n) = BC.unpack n
+var :: (Variable v) => Located v -> String
+var (Located _ x) = variable x
 
-signature :: Signature -> String
-signature (Signature n t) = node ["sig", name n, typ t]
+signature :: (Variable v) => Signature v -> String
+signature (Signature n t) = node ["sig", var n, typ t]
 
-equation :: Equation -> String
-equation (Equation n ps r) = node ["eq", name n, node (map pat ps), rhs r]
+equation :: (Variable v) => Equation v -> String
+equation (Equation n ps r) = node ["eq", var n, node (map pat ps), rhs r]
 
-rhs :: Rhs -> String
+rhs :: (Variable v) => Rhs v -> String
 rhs = \case
   Plain b -> body b
   Guarded gs -> node ("guards" : [node [guard g, body b] | (g, b) <- toList gs])
   where
+    guard :: (Variable w) => Guard w -> String
     guard = \case
       Otherwise -> "otherwise"
       Guard e -> expr e
 
-body :: Body -> String
+body :: (Variable v) => Body v -> String
 body = \case
   ExprBody e -> expr e
   BlockBody b -> block b
 
-block :: Block -> String
+block :: (Variable v) => Block v -> String
 block (Block sv ss) = node ("block" : [node ("state" : map stateLine sv) | not (null sv)] <> map stmt (toList ss))
   where
+    stateLine :: (Variable w) => StateLine w -> String
     stateLine = \case
       StateSignature s -> signature s
-      StateVar n b -> node ["var", name n, body b]
+      StateVar n b -> node ["var", var n, body b]
 
-stmt :: Located Stmt -> String
+stmt :: (Variable v) => Located (Stmt v) -> String
 stmt (Located _ s) = case s of
   LocalSignature sg -> signature sg
   LocalEquation e -> equation e
@@ -185,9 +221,9 @@ stmt (Located _ s) = case s of
   Pass -> "pass"
   ExprStmt e -> expr e
 
-expr :: Located Expr -> String
+expr :: (Variable v) => Located (Expr v) -> String
 expr (Located _ e) = case e of
-  Var n -> BC.unpack n
+  Var n -> variable n
   Con n -> BC.unpack n
   Lit n -> show n
   Unit -> "()"
@@ -233,17 +269,17 @@ expr (Located _ e) = case e of
       Until -> "until"
       Downto -> "downto"
 
-pat :: Located Pattern -> String
+pat :: (Variable v) => Located (Pattern v) -> String
 pat (Located _ p) = case p of
   PWild -> "_"
-  PVar n -> BC.unpack n
+  PVar n -> variable n
   PLit n -> show n
   PUnit -> "()"
   PCon n [] -> BC.unpack n
   PCon n ps -> node (BC.unpack n : map pat ps)
   PTuple ps -> node ("tuple" : map pat ps)
   POr ps -> node ("or" : map pat (toList ps))
-  PAs q n -> node ["as", pat q, name n]
+  PAs q n -> node ["as", pat q, var n]
 
 typ :: Located Type -> String
 typ (Located _ t) = case t of

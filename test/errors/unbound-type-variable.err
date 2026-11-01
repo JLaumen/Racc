@@ -1,0 +1,4 @@
+test/errors/unbound-type-variable.racc:2:5: error: `a` is not a parameter of `T`
+  |
+2 |   C a
+  |     ^

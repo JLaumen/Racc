@@ -1,0 +1,4 @@
+test/errors/alias-cycle.racc:1:6: error: the type alias `A` refers to itself
+  |
+1 | type A = B
+  |      ^

@@ -1,0 +1,4 @@
+test/errors/type-arguments.racc:1:5: error: `Bool` takes 0 type arguments but has 1
+  |
+1 | f : Bool Int
+  |     ^^^^^^^^

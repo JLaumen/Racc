@@ -1,0 +1,10 @@
+-- At top level, in `state`, and in a body.
+f : Int
+g = 1
+
+h =
+  state
+    s : Int
+    t = 1
+  x : Int
+  t

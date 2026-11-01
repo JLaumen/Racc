@@ -21,13 +21,33 @@ the syntax is in `GRAMMAR.md`.
   functions too. A clause whose guards all fail falls through to the next
   clause.
 - A value is a function without parameters.
-- A signature line gives the type of the function or value defined after
-  it, also for state variables.
+- A signature line gives the type of the function or value defined directly
+  after it, also for state variables.
 - Every `match` and every function must cover all values (checked at
   compile time). Patterns in bindings must always match.
-- Top-level declarations may appear in any order.
+- Top-level declarations may appear in any order. A top-level value may
+  not depend on itself, directly or through functions; values are evaluated
+  in the order of their dependencies.
 - Functions are pure unless they mutate their parameters or have effects.
-- The program starts at `main`.
+- Every program has a `main`, where it starts.
+
+## Scope
+
+- Top-level names are visible everywhere. Types, constructors, and values
+  have separate namespaces.
+- In a body, a name is visible from its definition to the end of its block
+  (an `if` branch, a loop body, a `match` arm, ...). A local function can
+  call itself; a local value cannot refer to itself.
+- Within one function a name has one meaning: defining a name that is in
+  scope from the same function is an error, also in an inner block. Parameters and locals
+  may shadow top-level names and, in a local function, the names of the
+  enclosing functions.
+- A local function sees the names of the enclosing functions and can assign
+  their state. If it uses their state, it can only be called, not passed as
+  a value.
+- Built-ins are defined in Racc, in a prelude, except primitives that Racc
+  cannot express or that must be fast, such as `Int` and `print`. They
+  cannot be redefined at top level.
 
 ## Types
 
@@ -38,17 +58,18 @@ the syntax is in `GRAMMAR.md`.
 
 ## Bindings and mutation
 
-Inside a body, `x = e` assigns if `x` is a place, and otherwise binds a new
-immutable local. A place is a state variable, a mutated parameter, or a
-field or element of a place.
+Inside a body, `x = e` assigns if `x` is a place, is an error if `x` is
+another local of the same function, and otherwise binds a new immutable
+local. A place is a state variable, a mutated parameter, or a field or
+element of a place.
 
-- A local is bound once; assigning it again is an error.
 - A parameter cannot be reassigned as a whole; assigning into it
   (`xs[i] = v`) mutates the caller's value.
-- A tuple on the left is all places or all new names. Assigning to places is
-  simultaneous: `(a, b) = (b, a + b)`.
+- A pattern on the left, such as a tuple, assigns only places or binds only
+  new names. Assigning to places is simultaneous: `(a, b) = (b, a + b)`.
 - A statement whose value is not `()` is discarded with a warning; so is an
-  unused local, unless its name starts with `_`.
+  unused local (a parameter, pattern variable, binding, state variable, or
+  local function), unless its name starts with `_`.
 
 ### State
 

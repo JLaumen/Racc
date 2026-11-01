@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | What the golden files can't show: spans, and that parsing never crashes.
+-- | What the golden files can't show: spans, and that the front end never
+-- crashes.
 module ParserTests (tests) where
 
 import Control.Monad (foldM)
@@ -9,7 +10,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
 import LexerTests (keywords, symbols)
-import Racc (parseTree)
+import Racc (resolveTree)
 import Racc.Diagnostic (Located (Located), Pos (Pos), Span (Span))
 import Racc.Lexer (tokenize)
 import Racc.Parser (parse)
@@ -32,10 +33,10 @@ spans = do
       map (\(Located sp _) -> sp) (toList ss) @?= [Span (Pos 2 3) (Pos 3 6), Span (Pos 4 3) (Pos 4 8)]
     _ -> assertBool "unexpected tree" False
 
--- | Lexing and parsing end, without an exception, on the seeds with a few
--- random edits, so that most inputs get deep into the parser.
+-- | Lexing, parsing, and name resolution end, without an exception, on the
+-- seeds with a few random edits, so that most inputs get deep into them.
 neverCrashes :: [ByteString] -> Property
-neverCrashes seeds = withNumTests 10000 $ forAll mutant $ \src -> within 1000000 (length (show (parseTree src)) `seq` True)
+neverCrashes seeds = withNumTests 10000 $ forAll mutant $ \src -> within 1000000 (length (show (resolveTree src)) `seq` True)
   where
     mutant :: Gen ByteString
     mutant = do

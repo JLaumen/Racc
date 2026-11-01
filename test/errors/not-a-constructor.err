@@ -1,0 +1,4 @@
+test/errors/not-a-constructor.racc:1:5: error: `Foo` is not a constructor
+  |
+1 | f = Foo
+  |     ^^^
