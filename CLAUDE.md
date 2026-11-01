@@ -32,6 +32,12 @@ emits C.
 - Releases happen at milestones; the first is 0.1.0, when everything in
   DESIGN.md's "Version 0.1" works. A release commit sets the version in
   `racc.cabal` and is tagged `vX.Y.Z`; release notes go on GitHub only.
+- When a milestone is reached, tell the user and draft the release commit
+  and notes (summarised from git history). Commit, tag, push, and publish
+  with `gh release create` only after the user approves that release.
+- Releases include a prebuilt binary, built by CI: Linux x86_64 only, fully
+  static (built against musl in an Alpine container). Write that CI job
+  when preparing 0.1.0, and test it with a manual run before publishing.
 
 ## Status
 
