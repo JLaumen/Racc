@@ -23,11 +23,16 @@ common shared
 library
   import: shared
   hs-source-dirs: src
-  build-depends: bytestring
+  build-depends:
+    bytestring,
+    transformers,
+
   exposed-modules:
     Racc
     Racc.Diagnostic
     Racc.Lexer
+    Racc.Parser
+    Racc.Syntax
 
 executable racc
   import: shared
@@ -42,7 +47,10 @@ test-suite tests
   type: exitcode-stdio-1.0
   hs-source-dirs: test
   main-is: Main.hs
-  other-modules: LexerTests
+  other-modules:
+    LexerTests
+    ParserTests
+
   build-depends:
     bytestring,
     filepath,

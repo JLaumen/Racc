@@ -1,4 +1,0 @@
-test/errors/number-underscores.racc:1:5: error: invalid number literal `1__000`
-  |
-1 | x = 1__000
-  |     ^^^^^^

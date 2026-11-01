@@ -7,6 +7,7 @@ module Main (main) where
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy.Char8 qualified as LBS
 import LexerTests qualified
+import ParserTests qualified
 import Racc (compile)
 import Racc.Diagnostic (render)
 import System.FilePath (replaceExtension, takeBaseName, (</>))
@@ -23,6 +24,7 @@ main = do
     testGroup
       "racc"
       [ LexerTests.tests,
+        ParserTests.tests,
         testGroup "run" (map (golden ".out" run) runs),
         testGroup "errors" (map (golden ".err" failure) errors)
       ]

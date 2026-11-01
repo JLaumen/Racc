@@ -1,4 +1,6 @@
-module Racc.Diagnostic (Pos (..), Span (..), Diagnostic (..), render) where
+{-# LANGUAGE RoleAnnotations #-}
+
+module Racc.Diagnostic (Pos (..), Span (..), Located (..), Diagnostic (..), render) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BC
@@ -10,7 +12,12 @@ data Pos = Pos {line :: !Int, col :: !Int}
 
 -- | From the start (inclusive) to the end (exclusive).
 data Span = Span !Pos !Pos
-  deriving stock (Show)
+  deriving stock (Eq, Show)
+
+-- | A value with its place in the source.
+type role Located representational
+
+data Located a = Located !Span !a
 
 data Diagnostic = Diagnostic !Span String
   deriving stock (Show)

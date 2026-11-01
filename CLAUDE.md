@@ -25,6 +25,9 @@ emits C.
   even small defaults.
 - When a decision changes, update `DESIGN.md` and `GRAMMAR.md` in the same
   step, including examples.
+- Before committing a significant change, do a pass over it for the
+  minimalism rules above, then run a code review (`/code-review`) on it
+  and address the findings.
 
 ## Versioning
 
@@ -42,7 +45,7 @@ emits C.
 
 ## Status
 
-The lexer is done; parsing and later phases are not (`compile` in
+The lexer and parser are done; later phases are not (`compile` in
 `src/Racc.hs`).
 
 ## Build
@@ -50,7 +53,8 @@ The lexer is done; parsing and later phases are not (`compile` in
 - `cabal build`; `cabal run racc -- FILE.racc` prints C to stdout.
 - `cabal test`: unit tests plus golden tests. Each `test/run/X.racc` is
   compiled with `cc`, run, and its output compared with `X.out`; each
-  `test/errors/X.racc` must fail with the message in `X.err`.
+  `test/errors/X.racc` must fail with the rendered error in `X.err`. Unit
+  tests check every error message; the error goldens only cover rendering.
   `--test-options=--accept` writes missing or changed golden files.
 - `scripts/check`: everything CI runs: ormolu, cabal-gild, hlint, build,
   weeder, tests. Run it before committing. Tool versions are pinned in

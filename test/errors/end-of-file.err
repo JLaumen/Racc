@@ -1,0 +1,4 @@
+test/errors/end-of-file.racc:1:6: error: expected an indented block, found the end of the file
+  |
+1 | f x =
+  |      ^

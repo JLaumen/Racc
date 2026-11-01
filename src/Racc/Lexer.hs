@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RoleAnnotations #-}
 
 -- | Turns source text into the tokens of GRAMMAR.md, including layout.
-module Racc.Lexer (Token (..), Located (..), tokenize) where
+module Racc.Lexer (Token (..), tokenize) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -12,7 +11,7 @@ import Data.ByteString.Unsafe qualified as BU
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit, ord)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
-import Racc.Diagnostic (Diagnostic (Diagnostic), Pos (Pos, col, line), Span (Span))
+import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Pos (Pos, col, line), Span (Span))
 
 data Token
   = TLower ByteString
@@ -27,10 +26,6 @@ data Token
   | TDedent
   | TEnd
   deriving stock (Eq, Show)
-
-type role Located representational
-
-data Located a = Located !Span !a
 
 tokenize :: ByteString -> Either Diagnostic [Located Token]
 tokenize src = layout =<< scan src

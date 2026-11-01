@@ -1,4 +1,0 @@
-test/errors/bad-dedent.racc:4:3: error: indentation does not match any enclosing block
-  |
-4 |   2
-  |   ^

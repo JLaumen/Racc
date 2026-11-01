@@ -1,4 +1,0 @@
-test/errors/unexpected-character.racc:1:7: error: unexpected character `@`
-  |
-1 | x = a @ b
-  |       ^
