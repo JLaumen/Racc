@@ -32,7 +32,7 @@ import Racc.Syntax
     Signature (Signature),
     StateLine (StateSignature, StateVar),
     Stmt (Bind, Break, Continue, ExprStmt, For, If, LocalEquation, LocalSignature, Match, Pass, Return, While),
-    Type (TyCon, TyFun, TyTuple, TyUnit, TyVar),
+    Type (TyCon, TyFun, TyTuple, TyVar),
     UnaryOp (Complement, Neg, Not),
   )
 
@@ -299,7 +299,7 @@ atom =
       t <- peekAt 1
       if isOperator t
         then next >> notIn01 "operator sections are"
-        else parenthesized Unit Tuple expr
+        else parenthesized (pure Unit) Tuple expr
     TSymbol "[" -> notIn01 "lists are"
     TSymbol "{" -> notIn01 "sets and maps are"
     TKeyword "from" -> notIn01 "ranges without an end are"
@@ -368,7 +368,7 @@ apat =
     TInt n -> leaf (PLit n)
     TNeg -> located (next >> (\(Located _ n) -> PLit (negate n)) <$> satisfy "a number" (\case TInt n -> Just n; _ -> Nothing))
     TUpper n -> leaf (PCon n [])
-    TSymbol "(" -> parenthesized PUnit PTuple pat
+    TSymbol "(" -> parenthesized (pure PUnit) PTuple pat
     TSymbol "[" -> notIn01 "list patterns are"
     _ -> expected "a pattern"
 
@@ -398,7 +398,7 @@ atype =
   peek >>= \case
     TLower n -> leaf (TyVar n)
     TUpper n -> leaf (TyCon n [])
-    TSymbol "(" -> parenthesized TyUnit TyTuple typ
+    TSymbol "(" -> parenthesized (expected "a type") TyTuple typ
     _ -> expected "a type"
 
 startsAtype :: Token -> Bool
@@ -489,11 +489,11 @@ indented :: String -> P a -> P (NonEmpty a)
 indented what p = expect TIndent what >> untilDedent p
 
 -- | `()`, `(x)`, or a tuple `(x, y, ...)`.
-parenthesized :: a -> ([Located a] -> a) -> P (Located a) -> P (Located a)
+parenthesized :: P a -> ([Located a] -> a) -> P (Located a) -> P (Located a)
 parenthesized unit tuple item = located $ do
   next
   peek >>= \case
-    TSymbol ")" -> unit <$ next
+    TSymbol ")" -> unit <* next
     _ -> do
       x@(Located _ v) <- item
       xs <- manyWhile (== TSymbol ",") (next >> item)

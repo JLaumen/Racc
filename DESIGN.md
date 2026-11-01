@@ -28,8 +28,12 @@ the syntax is in `GRAMMAR.md`.
 - Top-level declarations may appear in any order. A top-level value may
   not depend on itself, directly or through functions; values are evaluated
   in the order of their dependencies.
+- A block's value is that of its last statement. An `if` with `else` and a
+  `match` have the value of their branches; other statements have the
+  value `()`. `return`, `break`, `continue`, and a `while True` without a
+  `break` for it never finish, so they fit any type.
 - Functions are pure unless they mutate their parameters or have effects.
-- Every program has a `main`, where it starts.
+- Every program has a `main` of type `Void`, where it starts.
 
 ## Scope
 
@@ -51,6 +55,13 @@ the syntax is in `GRAMMAR.md`.
 
 ## Types
 
+- Functions, also local ones, are generalized: they can be used at
+  several types. Values and state variables are not.
+- A signature may give a more specific type than the inferred one, not a
+  more general one.
+- The type variables of a signature are in scope in the function's body,
+  so local signatures can refer to them.
+- `Void` is the type of `()`.
 - `Int` is unbounded; small values are stored as machine integers. `/`
   rounds down, and `%` has the sign of the divisor.
 - `Bool` is an ordinary type with constructors `False` and `True`.
@@ -193,5 +204,10 @@ inserts a copy.
   `continue`, `return`.
 - A built-in `print` for `Int` and `Bool`.
 - Reference counting.
+
+Without type classes, arithmetic, bitwise, and ordering operators and
+ranges work on `Int`, `==` and `!=` on `Int` and `Bool`, and `print` takes
+`Int` or `Bool`. Where `==`, `!=`, or `print` is used, the type must be
+known by the end of the definition that uses it.
 
 Every call passes all arguments, and division by zero is checked at runtime.

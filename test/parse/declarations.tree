@@ -1,4 +1,4 @@
-(sig f (-> (Maybe (List a)) (-> (tuple Int b) ())))
+(sig f (-> (Maybe (List a)) (-> (tuple Int b) Void)))
 (eq f (0) 1)
 (eq f (-1) 2)
 (eq f ((tuple x y) N () _) x)

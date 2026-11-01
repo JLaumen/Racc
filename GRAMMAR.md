@@ -183,7 +183,6 @@ listItem     ::= pattern | '..' [ LOWER ]                     -- at most one '..
 type         ::= btype [ '->' type ]
 btype        ::= UPPER atype { atype } | atype
 atype        ::= LOWER | UPPER
-               | '(' ')'
                | '(' type ')'
                | '(' type ',' type { ',' type } ')'
 ```

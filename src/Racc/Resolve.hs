@@ -39,7 +39,7 @@ import Racc.Syntax
     Signature (Signature),
     StateLine (StateSignature, StateVar),
     Stmt (Bind, Break, Continue, ExprStmt, For, If, LocalEquation, LocalSignature, Match, Pass, Return, While),
-    Type (TyCon, TyFun, TyTuple, TyUnit, TyVar),
+    Type (TyCon, TyFun, TyTuple, TyVar),
     Variable (variable),
   )
 
@@ -58,7 +58,7 @@ prelude = either (error . show) id (parse =<< tokenize "type Bool\n  False\n  Tr
 
 -- | The built-ins that it can't: types without parameters, and values.
 primitiveTypes, primitiveValues :: [Name]
-primitiveTypes = ["Int"]
+primitiveTypes = ["Int", "Void"]
 primitiveValues = ["print"]
 
 data S = S
@@ -417,7 +417,6 @@ checkType env params (Located s t) = case t of
       Just n -> when (n /= length ts) (report s (quote c <> " takes " <> count n "type argument" <> " but has " <> show (length ts)))
     traverse_ go ts
   TyFun a b -> go a >> go b
-  TyUnit -> pure ()
   TyTuple ts -> traverse_ go ts
   where
     go = checkType env params

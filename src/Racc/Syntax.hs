@@ -150,7 +150,6 @@ data Type
   = TyVar Name
   | TyCon Name [Located Type]
   | TyFun (Located Type) (Located Type)
-  | TyUnit
   | -- | Two or more elements.
     TyTuple [Located Type]
 
@@ -287,5 +286,4 @@ typ (Located _ t) = case t of
   TyCon n [] -> BC.unpack n
   TyCon n ts -> node (BC.unpack n : map typ ts)
   TyFun a b -> node ["->", typ a, typ b]
-  TyUnit -> "()"
   TyTuple ts -> node ("tuple" : map typ ts)

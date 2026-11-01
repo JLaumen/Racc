@@ -1,0 +1,4 @@
+test/errors/unit-type.racc:1:9: error: expected a type after `(`, found `)`
+  |
+1 | main : ()
+  |         ^
