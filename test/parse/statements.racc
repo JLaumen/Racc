@@ -42,7 +42,11 @@ expressions =
 loops =
   while a
     b
-  for (i, j) in 1 to n
+  for (i, j) in 1 to n by 2
+    pass
+  for i in a until b
+    pass
+  for i in a downto b
     pass
 
 matches =

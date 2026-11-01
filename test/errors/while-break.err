@@ -1,0 +1,4 @@
+test/errors/while-break.racc:3:3: error: expected `Int`, found `Void`
+  |
+3 |   while True
+  |   ^^^^^^^^^^

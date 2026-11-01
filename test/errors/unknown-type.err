@@ -1,0 +1,4 @@
+test/errors/unknown-type.racc:1:12: error: `==` needs `Int` or `Bool`, but the type here is not known; add a signature
+  |
+1 | same x y = x == y
+  |            ^^^^^^

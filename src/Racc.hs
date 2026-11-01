@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Racc (compile, parseTree, resolveTree) where
+module Racc (compile, parseTree, resolveTree, types) where
 
 import Data.Bifunctor (first, second)
 import Data.ByteString (ByteString)
@@ -11,11 +11,12 @@ import Racc.Lexer (tokenize)
 import Racc.Parser (parse)
 import Racc.Resolve (resolve)
 import Racc.Syntax (Decl (EquationDecl), Equation (Equation), Name, Variable, sexpr)
+import Racc.Typecheck (typecheck)
 
 -- | Compile Racc source to C.
 compile :: ByteString -> Result String
 compile = phases $ \ds ->
-  let (diags, p) = resolve ds
+  let (diags, p) = checked ds
       atStart = Diagnostic Error (Span (Pos 1 1) (Pos 1 1))
       hasMain = not (null [() | Located _ (EquationDecl (Equation (Located _ "main") _ _)) <- ds])
    in ( diags
@@ -30,6 +31,14 @@ parseTree = phases (\ds -> ([], Just (tree ds)))
 -- | The syntax tree after name resolution.
 resolveTree :: ByteString -> Result String
 resolveTree = phases (second (fmap tree) . resolve)
+
+-- | The type of each definition.
+types :: ByteString -> Result String
+types = phases checked
+
+-- | Resolves names, then checks types if that succeeded.
+checked :: [Located (Decl Name)] -> Result String
+checked ds = let (d1, p) = resolve ds; (d2, t) = maybe ([], Nothing) typecheck p in (d1 <> d2, t)
 
 -- | Parses, then runs the later phases if that succeeded; sorts the
 -- diagnostics by position.

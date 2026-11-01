@@ -1,0 +1,4 @@
+test/errors/signature-too-general.racc:2:13: error: expected `b`, found `a`
+  |
+2 | convert x = x
+  |             ^

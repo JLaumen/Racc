@@ -1,0 +1,70 @@
+-- A block's value is that of its last statement.
+sign x =
+  if x < 0
+    -1
+  elif x == 0
+    0
+  else
+    1
+
+-- `return`, `break`, `continue`, and `while True` without a `break` fit
+-- any type.
+early x =
+  if x > 0
+    return 1
+  else
+    x
+search n =
+  state
+    i = 0
+  while True
+    if i * i >= n
+      return i
+    i = i + 1
+loops n =
+  state
+    total : Int
+    total = 0
+    a = 0
+    b = 1
+  for i in 0 until n by 2
+    (a, b) = (b, a + b)
+    if i == 3
+      break
+    else
+      continue
+  for j in n downto 0
+    total = total - j
+  while total > 0
+    total = total - 1
+    pass
+  return
+
+-- A state variable's signature may use those of its function.
+keep : a -> a
+keep x =
+  state
+    s : a
+    s = x
+  s
+
+-- Values of statements other than the last are discarded, those of an
+-- `if` or `match` per branch.
+discards x =
+  x + 1
+  if x > 0
+    x
+  else
+    print x
+  match x
+    0 -> True
+    _ -> 1
+  if x > 0
+    return
+  else
+    pass
+  ignore x
+  print x
+ignore y =
+  y
+  ()

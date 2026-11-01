@@ -1,0 +1,4 @@
+test/errors/state-type-variable.racc:3:9: error: `a` is not in scope; a state variable can only use the type variables of its function's signature
+  |
+3 |     s : a
+  |         ^

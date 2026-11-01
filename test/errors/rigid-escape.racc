@@ -1,0 +1,6 @@
+-- The signature of `g` may not mention the type of `x`.
+f x =
+  g : a -> a
+  g _ = x
+  g 1
+main = print 1

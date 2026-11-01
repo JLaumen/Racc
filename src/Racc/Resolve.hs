@@ -3,7 +3,7 @@
 -- | Name resolution, following the scope rules of DESIGN.md: every variable
 -- becomes a reference to its definition. Reports every error it finds, and
 -- warns about unused locals.
-module Racc.Resolve (Ref (..), resolve) where
+module Racc.Resolve (Ref (..), prelude, resolve) where
 
 import Control.Monad (foldM, foldM_, guard, unless, when)
 import Control.Monad.Trans.State.Strict (State, gets, modify, runState, state)
@@ -31,10 +31,11 @@ import Racc.Syntax
     Constructor (Constructor),
     Decl (EquationDecl, SignatureDecl, TypeAlias, TypeDecl),
     Equation (Equation),
-    Expr (App, Binary, Compare, Con, IfExpr, Lit, Range, Tuple, Unary, Unit, Var),
+    Expr (App, Binary, Compare, Con, IfExpr, Lit, Tuple, Unary, Unit, Var),
     Guard (Guard, Otherwise),
     Name,
     Pattern (PAs, PCon, PLit, POr, PTuple, PUnit, PVar, PWild),
+    Range (Range),
     Rhs (Guarded, Plain),
     Signature (Signature),
     StateLine (StateSignature, StateVar),
@@ -46,6 +47,7 @@ import Racc.Syntax
 -- | What a variable refers to: a top-level or built-in definition, or a
 -- local one, numbered to tell apart locals with the same name.
 data Ref = Global Name | Local Name Int
+  deriving stock (Eq, Ord)
 
 instance Variable Ref where
   variable = \case
@@ -319,10 +321,10 @@ stmt env (Located s st) rest = case st of
     pure (env', Located s (Bind p' b') :| [], rest)
   If bs e -> one (If <$> traverse (\(c, b) -> (,) <$> expr env c <*> block env b) bs <*> traverse (block env) e)
   While c b -> one (While <$> expr env c <*> block (inLoop env) b)
-  For p e b -> one $ do
-    e' <- expr env e
+  For p (Range a op b c) bl -> one $ do
+    r <- Range <$> expr env a <*> pure op <*> expr env b <*> traverse (expr env) c
     (env', m) <- defineAll env (vars p)
-    For <$> pat env m p <*> pure e' <*> block (inLoop env') b
+    For <$> pat env m p <*> pure r <*> block (inLoop env') bl
   Match e arms -> one (Match <$> expr env e <*> traverse arm arms)
   Return e -> one (Return <$> traverse (expr env) e)
   Break n -> one (Break n <$ jump "break" n)
@@ -365,7 +367,6 @@ expr env (Located s e) =
     Unary op a -> Unary op <$> go a
     Binary op a b -> Binary op <$> go a <*> go b
     Compare a rest -> Compare <$> go a <*> traverse (traverse go) rest
-    Range a op b c -> Range <$> go a <*> pure op <*> go b <*> traverse go c
     IfExpr c a b -> IfExpr <$> go c <*> go a <*> go b
   where
     go = expr env

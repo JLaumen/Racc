@@ -1,0 +1,2 @@
+self x = x x
+main = print 1

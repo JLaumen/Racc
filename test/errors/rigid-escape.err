@@ -1,0 +1,4 @@
+test/errors/rigid-escape.racc:4:9: error: expected `a`, found `b`
+  |
+4 |   g _ = x
+  |         ^

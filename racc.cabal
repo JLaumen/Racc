@@ -35,6 +35,7 @@ library
     Racc.Parser
     Racc.Resolve
     Racc.Syntax
+    Racc.Typecheck
 
 executable racc
   import: shared

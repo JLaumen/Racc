@@ -1,0 +1,4 @@
+test/errors/range-outside-for.racc:1:7: error: ranges anywhere but directly after `for ... in` are not part of version 0.1
+  |
+1 | x = 1 to 2
+  |       ^^

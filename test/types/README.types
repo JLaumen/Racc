@@ -1,0 +1,5 @@
+collatz : Int -> Int
+  n.0 : Int
+  x.1 : Int
+  steps.2 : Int
+main : Void

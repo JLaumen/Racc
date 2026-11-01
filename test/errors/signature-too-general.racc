@@ -1,0 +1,3 @@
+convert : a -> b
+convert x = x
+main = print 1

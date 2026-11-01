@@ -1,0 +1,56 @@
+type Option a
+  None
+  Some a
+
+type Pair a = (a, a)
+
+-- Definitions are generalized, also values and local ones.
+identity x = x
+none = None
+generalized =
+  swap (x, y) = (y, x)
+  local = None
+  (identity 1, identity True, swap (1, True), swap (False, 2), orElse 1 none, orElse True none, orElse 1 local, orElse True local)
+
+orElse d o =
+  match o
+    Some x -> x
+    None -> d
+
+-- Function arguments and nested types.
+apply f x = f x
+nested = Some (Some (apply inc 1))
+
+-- Mutual recursion.
+even n = if n == 0 then True else odd (n - 1)
+odd n = if n == 0 then False else even (n - 1)
+
+-- A signature may be more specific than the inferred type; its type
+-- variables are in scope in the body; aliases are expanded.
+inc : Int -> Int
+inc x = x
+twice : a -> Pair a
+twice x =
+  copy : a -> (a, a)
+  copy y = (y, x)
+  copy x
+
+-- Polymorphic recursion, with a signature.
+nest : a -> Int
+nest x = nest (x, x)
+
+operators a b = (b * 2 / 3 % 4 ** 5 + -a, ~a & b | a ^ b << 1 >> 2, not (a < b) and a <= b or a > b, a >= b)
+equality x y = x == y != True
+
+patterns o =
+  match o
+    None -> 0
+    Some (0 or 1) -> 1
+    Some n as _s
+      | n > 0 -> 2
+      | otherwise -> 3
+unit () = ()
+
+main =
+  print (identity 1)
+  print (equality False True)

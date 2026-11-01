@@ -1,6 +1,5 @@
 (eq logic () (or (or a b) (and c (not (cmp d == e)))))
 (eq comparison () (cmp a == b != c < d <= e > f >= (+ g 1)))
-(eq ranges () (tuple (to 1 n 2) (until a b) (downto a b)))
 (eq bitwise () (| a (^ b (& c (<< d (+ e (* f g)))))))
 (eq arithmetic () (>> a (- (- b c) (% (/ d e) f))))
 (eq power () (neg (** a (** b (~ c)))))

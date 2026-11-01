@@ -1,0 +1,4 @@
+test/errors/print-type.racc:1:8: error: `print` needs `Int` or `Bool`, not `(Int, Int)`
+  |
+1 | main = print (1, 2)
+  |        ^^^^^

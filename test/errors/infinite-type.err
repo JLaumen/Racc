@@ -1,0 +1,4 @@
+test/errors/infinite-type.racc:1:12: error: expected `a`, found `a -> b` (a type can't contain itself)
+  |
+1 | self x = x x
+  |            ^

@@ -55,12 +55,14 @@ the syntax is in `GRAMMAR.md`.
 
 ## Types
 
-- Functions, also local ones, are generalized: they can be used at
-  several types. Values and state variables are not.
+- Every equation, also a local one, is generalized: what it defines can be
+  used at several types. Pattern bindings, parameters, and state variables
+  are not.
 - A signature may give a more specific type than the inferred one, not a
   more general one.
 - The type variables of a signature are in scope in the function's body,
-  so local signatures can refer to them.
+  so local signatures can refer to them. A state variable's signature can
+  only use those.
 - `Void` is the type of `()`.
 - `Int` is unbounded; small values are stored as machine integers. `/`
   rounds down, and `%` has the sign of the divisor.
@@ -78,9 +80,11 @@ element of a place.
   (`xs[i] = v`) mutates the caller's value.
 - A pattern on the left, such as a tuple, assigns only places or binds only
   new names. Assigning to places is simultaneous: `(a, b) = (b, a + b)`.
-- A statement whose value is not `()` is discarded with a warning; so is an
-  unused local (a parameter, pattern variable, binding, state variable, or
-  local function), unless its name starts with `_`.
+- A statement whose value is not `()` is discarded with a warning; for an
+  `if` or `match`, each branch's value is discarded on its own, so their
+  types may differ.
+- An unused local (a parameter, pattern variable, binding, state variable,
+  or local function) gives a warning, unless its name starts with `_`.
 
 ### State
 
@@ -205,8 +209,9 @@ inserts a copy.
 - A built-in `print` for `Int` and `Bool`.
 - Reference counting.
 
-Without type classes, arithmetic, bitwise, and ordering operators and
-ranges work on `Int`, `==` and `!=` on `Int` and `Bool`, and `print` takes
+A range may only appear directly after `for ... in`. Without type
+classes, arithmetic, bitwise, and ordering operators and ranges work on
+`Int`, `==` and `!=` on `Int` and `Bool`, and `print` takes
 `Int` or `Bool`. Where `==`, `!=`, or `print` is used, the type must be
 known by the end of the definition that uses it.
 

@@ -1,0 +1,6 @@
+f n =
+  state
+    s : a
+    s = n
+  s
+main = print (f 1)

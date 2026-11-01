@@ -1,0 +1,4 @@
+test/errors/for-range.racc:2:12: error: loops over anything but a range are not part of version 0.1
+  |
+2 |   for x in y
+  |            ^

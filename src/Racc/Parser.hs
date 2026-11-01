@@ -12,7 +12,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BC
 import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (isJust, listToMaybe)
 import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Pos (Pos), Severity (Error), Span (Span), quote)
 import Racc.Lexer (Token (TDedent, TEnd, TIndent, TIndex, TInt, TKeyword, TLower, TNeg, TNewline, TSymbol, TUpper))
 import Racc.Syntax
@@ -23,10 +23,11 @@ import Racc.Syntax
     Constructor (Constructor),
     Decl (EquationDecl, SignatureDecl, TypeAlias, TypeDecl),
     Equation (Equation),
-    Expr (App, Binary, Compare, Con, IfExpr, Lit, Range, Tuple, Unary, Unit, Var),
+    Expr (App, Binary, Compare, Con, IfExpr, Lit, Tuple, Unary, Unit, Var),
     Guard (Guard, Otherwise),
     Name,
     Pattern (PAs, PCon, PLit, POr, PTuple, PUnit, PVar, PWild),
+    Range (Range),
     RangeOp (Downto, To, Until),
     Rhs (Guarded, Plain),
     Signature (Signature),
@@ -138,7 +139,7 @@ stmt =
         TKeyword "then" -> ExprStmt <$> inlineIf s c <* endLine
         _ -> ifStmt c
     TKeyword "while" -> next >> While <$> expr <* endLine <*> block False
-    TKeyword "for" -> next >> For <$> pat <* expect (TKeyword "in") "`in`" <*> expr <* endLine <*> block False
+    TKeyword "for" -> next >> For <$> pat <* expect (TKeyword "in") "`in`" <*> range <* endLine <*> block False
     TKeyword "match" ->
       next >> Match <$> expr <* endLine <*> indented "indented match arms" ((,) <$> pat <*> rhs "->" False)
     TKeyword "return" -> next >> Return <$> unlessEnd expr <* endLine
@@ -233,16 +234,21 @@ rangeExpr :: P (Located (Expr Name))
 rangeExpr = do
   a <- arith
   t <- peek
-  case lookup t rangeOps of
-    Just op -> do
-      next
-      b <- arith
-      c <-
-        peek >>= \case
-          TKeyword "by" -> next >> Just <$> arith
-          _ -> pure Nothing
-      pure (Located (cover a (fromMaybe b c)) (Range a op b c))
-    Nothing -> pure a
+  if isJust (lookup t rangeOps) then notIn01 "ranges anywhere but directly after `for ... in` are" else pure a
+
+-- | The range after `for ... in`, the only place for one in version 0.1.
+range :: P (Range Name)
+range = do
+  a@(Located sa _) <- arith
+  t <- peek
+  op <- maybe (notIn01At sa "loops over anything but a range are") pure (lookup t rangeOps)
+  next
+  b <- arith
+  c <-
+    peek >>= \case
+      TKeyword "by" -> next >> Just <$> arith
+      _ -> pure Nothing
+  pure (Range a op b c)
 
 arith :: P (Located (Expr Name))
 arith = foldr binary unary arithOps
@@ -516,7 +522,10 @@ expected what = do
   failHere ("expected " <> what <> maybe "" ((" after " <>) . describe) prev <> ", found " <> describe t)
 
 notIn01 :: String -> P a
-notIn01 what = failHere (what <> " not part of version 0.1")
+notIn01 what = current >>= \(Located s _) -> notIn01At s what
+
+notIn01At :: Span -> String -> P a
+notIn01At s what = lift (Left (Diagnostic Error s (what <> " not part of version 0.1")))
 
 describe :: Token -> String
 describe = \case

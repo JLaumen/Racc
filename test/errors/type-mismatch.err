@@ -1,0 +1,4 @@
+test/errors/type-mismatch.racc:2:19: error: expected `Int`, found `Bool`
+  |
+2 | main = print (1 + True)
+  |                   ^^^^

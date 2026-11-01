@@ -102,7 +102,7 @@ stmt         ::= signature                          -- local signature
                  { 'elif' expr NEWLINE block }
                  [ 'else' NEWLINE block ]
                | 'while' expr NEWLINE loopBlock
-               | 'for' pattern 'in' expr NEWLINE loopBlock
+               | 'for' pattern 'in' expr NEWLINE loopBlock  -- 0.1: expr is a range
                | 'match' expr NEWLINE INDENT arm { arm } DEDENT
                | 'return' [ expr ] NEWLINE
                | 'break' [ INT ] NEWLINE
@@ -133,7 +133,7 @@ andExpr      ::= notExpr { 'and' notExpr }
 notExpr      ::= 'not' notExpr | cmpExpr
 cmpExpr      ::= rangeExpr { cmpOp rangeExpr }
 cmpOp        ::= '==' | '!=' | '<' | '<=' | '>' | '>='
-rangeExpr    ::= bitOr [ rangeOp bitOr [ 'by' bitOr ] ]
+rangeExpr    ::= bitOr [ rangeOp bitOr [ 'by' bitOr ] ]   -- 0.1: range only in `for`
                | 'from' bitOr                                 -- not in 0.1
 rangeOp      ::= 'to' | 'until' | 'downto'
 bitOr        ::= bitXor { '|' bitXor }

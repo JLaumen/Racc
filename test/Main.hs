@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | Runs the unit tests and four kinds of golden tests:
+-- | Runs the unit tests and five kinds of golden tests:
 --
 -- * test/parse/X.racc is parsed and its tree compared with X.tree.
 -- * test/resolve/X.racc is resolved, and its warnings and tree compared with
 --   X.tree; so is the example of README.md, with README.tree.
+-- * test/types/X.racc is type checked, and its warnings and types compared
+--   with X.types; so is the example of README.md, with README.types.
 -- * test/run/X.racc is compiled, run, and its output compared with X.out.
 -- * test/errors/X.racc must fail to compile with the error in X.err; one of
 --   them also in colour, in X.colour.
@@ -16,7 +18,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy.Char8 qualified as LBS
 import LexerTests qualified
 import ParserTests qualified
-import Racc (compile, parseTree, resolveTree)
+import Racc (compile, parseTree, resolveTree, types)
 import Racc.Diagnostic (Result, render)
 import System.FilePath (replaceExtension, takeBaseName, (</>))
 import System.IO.Temp (withSystemTempDirectory)
@@ -28,10 +30,11 @@ main :: IO ()
 main = do
   parses <- findByExtension [".racc"] "test/parse"
   resolves <- findByExtension [".racc"] "test/resolve"
+  typeds <- findByExtension [".racc"] "test/types"
   runs <- findByExtension [".racc"] "test/run"
   errors <- findByExtension [".racc"] "test/errors"
   readme <- example <$> BS.readFile "README.md"
-  seeds <- (readme :) <$> traverse BS.readFile (parses <> resolves <> runs <> errors)
+  seeds <- (readme :) <$> traverse BS.readFile (parses <> resolves <> typeds <> runs <> errors)
   defaultMain $
     testGroup
       "racc"
@@ -41,6 +44,9 @@ main = do
         testGroup "resolve" $
           goldenVsString "README" "test/resolve/README.tree" (LBS.pack <$> success resolveTree "README.md" readme)
             : map (golden ".tree" (success resolveTree)) resolves,
+        testGroup "types" $
+          goldenVsString "README" "test/types/README.types" (LBS.pack <$> success types "README.md" readme)
+            : map (golden ".types" (success types)) typeds,
         testGroup "run" (map (golden ".out" run) runs),
         testGroup "errors" $
           goldenVsString "colour" (replaceExtension colour ".colour") (LBS.pack <$> (failure True colour =<< BS.readFile colour))

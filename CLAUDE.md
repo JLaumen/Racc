@@ -45,24 +45,27 @@ emits C.
 
 ## Status
 
-The lexer, parser, and name resolution are done; later phases are not
-(`compile` in `src/Racc.hs`). Left to mutation inference: a local function
+The lexer, parser, name resolution, and type checking are done; later
+phases are not (`compile` in `src/Racc.hs`). Left to mutation inference: a local function
 that uses enclosing state cannot be passed as a value.
 
 ## Build
 
 - `cabal build`; `cabal run racc FILE.racc` prints C to stdout;
   `cabal run racc parse FILE.racc` prints the syntax tree instead, and
-  `resolve` the tree after name resolution, with locals numbered (`x.3`).
+  `resolve` the tree after name resolution, with locals numbered (`x.3`),
+  and `types` the type of each definition, its locals indented below it.
 - `cabal test`: golden tests, in files so they can also be run by hand.
   Each `test/parse/X.racc` is parsed and its tree compared with `X.tree`;
   each `test/resolve/X.racc` is resolved and its warnings and tree compared
-  with `X.tree`; each `test/run/X.racc` is compiled with `cc`, run, and its output
-  compared with `X.out`; each `test/errors/X.racc` must fail with the
-  error in `X.err`, one file per way to fail; `tuple-close.colour` has
-  that error in colour. Unit tests cover only what
-  files can't show (tokens, spans). A property test checks that lexing,
-  parsing, and name resolution never crash or hang, on the golden inputs with random edits.
+  with `X.tree`; each `test/types/X.racc` is type checked and its warnings
+  and types compared with `X.types`; each `test/run/X.racc` is compiled
+  with `cc`, run, and its output compared with `X.out`; each
+  `test/errors/X.racc` must fail with the error in `X.err`, one file per
+  way to fail; `tuple-close.colour` has that error in colour. Unit tests
+  cover only what files can't show (tokens, spans). A property test checks
+  that lexing, parsing, name resolution, and type checking never crash or
+  hang, on the golden inputs with random edits.
   `--test-options=--accept` writes missing or changed golden files.
 - `scripts/check`: everything CI runs: ormolu, cabal-gild, hlint, build,
   weeder, tests. Run it before committing. Tool versions are pinned in

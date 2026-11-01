@@ -15,6 +15,7 @@ module Racc.Syntax
     Block (..),
     StateLine (..),
     Stmt (..),
+    Range (..),
     Expr (..),
     UnaryOp (..),
     BinaryOp (..),
@@ -45,11 +46,13 @@ data Decl v
 type role Signature representational
 
 data Signature v = Signature (Located v) (Located Type)
+  deriving stock (Foldable)
 
 -- | One equation; consecutive ones are grouped into a function later.
 type role Equation representational
 
 data Equation v = Equation (Located v) [Located (Pattern v)] (Rhs v)
+  deriving stock (Foldable)
 
 data Constructor = Constructor (Located Name) [Located Type]
 
@@ -57,22 +60,27 @@ data Constructor = Constructor (Located Name) [Located Type]
 type role Rhs representational
 
 data Rhs v = Plain (Body v) | Guarded (NonEmpty (Guard v, Body v))
+  deriving stock (Foldable)
 
 type role Guard representational
 
 data Guard v = Otherwise | Guard (Located (Expr v))
+  deriving stock (Foldable)
 
 type role Body representational
 
 data Body v = ExprBody (Located (Expr v)) | BlockBody (Block v)
+  deriving stock (Foldable)
 
 type role Block representational
 
 data Block v = Block [StateLine v] (NonEmpty (Located (Stmt v)))
+  deriving stock (Foldable)
 
 type role StateLine representational
 
 data StateLine v = StateSignature (Signature v) | StateVar (Located v) (Body v)
+  deriving stock (Foldable)
 
 type role Stmt representational
 
@@ -85,13 +93,14 @@ data Stmt v
   | -- | The `if` and `elif` branches, and the `else` branch.
     If (NonEmpty (Located (Expr v), Block v)) (Maybe (Block v))
   | While (Located (Expr v)) (Block v)
-  | For (Located (Pattern v)) (Located (Expr v)) (Block v)
+  | For (Located (Pattern v)) (Range v) (Block v)
   | Match (Located (Expr v)) (NonEmpty (Located (Pattern v), Rhs v))
   | Return (Maybe (Located (Expr v)))
   | Break (Maybe (Located Integer))
   | Continue (Maybe (Located Integer))
   | Pass
   | ExprStmt (Located (Expr v))
+  deriving stock (Foldable)
 
 type role Expr representational
 
@@ -107,9 +116,14 @@ data Expr v
   | Binary BinaryOp (Located (Expr v)) (Located (Expr v))
   | -- | A chain such as `a < b <= c`.
     Compare (Located (Expr v)) (NonEmpty (CompareOp, Located (Expr v)))
-  | -- | The optional last part is the step (`by`).
-    Range (Located (Expr v)) RangeOp (Located (Expr v)) (Maybe (Located (Expr v)))
   | IfExpr (Located (Expr v)) (Located (Expr v)) (Located (Expr v))
+  deriving stock (Foldable)
+
+-- | The range of a `for`; the optional last part is the step (`by`).
+type role Range representational
+
+data Range v = Range (Located (Expr v)) RangeOp (Located (Expr v)) (Maybe (Located (Expr v)))
+  deriving stock (Foldable)
 
 data UnaryOp = Neg | Complement | Not
 
@@ -145,6 +159,7 @@ data Pattern v
   | -- | Two or more alternatives.
     POr (NonEmpty (Located (Pattern v)))
   | PAs (Located (Pattern v)) (Located v)
+  deriving stock (Foldable)
 
 data Type
   = TyVar Name
@@ -212,13 +227,19 @@ stmt (Located _ s) = case s of
   Bind p b -> node ["bind", pat p, body b]
   If bs e -> node ("if" : [node [expr c, block b] | (c, b) <- toList bs] <> [node ["else", block b] | Just b <- [e]])
   While c b -> node ["while", expr c, block b]
-  For p e b -> node ["for", pat p, expr e, block b]
+  For p (Range a op b c) bl -> node ["for", pat p, node ([rangeOp op, expr a, expr b] <> map expr (toList c)), block bl]
   Match e arms -> node ("match" : expr e : [node [pat p, rhs r] | (p, r) <- toList arms])
   Return e -> node ("return" : map expr (toList e))
   Break n -> node ("break" : [show i | Located _ i <- toList n])
   Continue n -> node ("continue" : [show i | Located _ i <- toList n])
   Pass -> "pass"
   ExprStmt e -> expr e
+
+rangeOp :: RangeOp -> String
+rangeOp = \case
+  To -> "to"
+  Until -> "until"
+  Downto -> "downto"
 
 expr :: (Variable v) => Located (Expr v) -> String
 expr (Located _ e) = case e of
@@ -231,7 +252,6 @@ expr (Located _ e) = case e of
   Unary op a -> node [unaryOp op, expr a]
   Binary op a b -> node [binaryOp op, expr a, expr b]
   Compare a rest -> node ("cmp" : expr a : concat [[compareOp op, expr b] | (op, b) <- toList rest])
-  Range a op b c -> node ([rangeOp op, expr a, expr b] <> map expr (toList c))
   IfExpr c a b -> node ["if", expr c, expr a, expr b]
   where
     unaryOp :: UnaryOp -> String
@@ -262,11 +282,6 @@ expr (Located _ e) = case e of
       LessEqual -> "<="
       Greater -> ">"
       GreaterEqual -> ">="
-    rangeOp :: RangeOp -> String
-    rangeOp = \case
-      To -> "to"
-      Until -> "until"
-      Downto -> "downto"
 
 pat :: (Variable v) => Located (Pattern v) -> String
 pat (Located _ p) = case p of

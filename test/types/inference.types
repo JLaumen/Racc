@@ -1,0 +1,40 @@
+identity : a -> a
+  x.0 : a
+none : Option a
+generalized : (Int, Bool, (Bool, Int), (Int, Bool), Int, Bool, Int, Bool)
+  swap.1 : (a, b) -> (b, a)
+  x.2 : a
+  y.3 : b
+  local.4 : Option c
+orElse : a -> Option a -> a
+  d.5 : a
+  o.6 : Option a
+  x.7 : a
+apply : (a -> b) -> a -> b
+  f.8 : a -> b
+  x.9 : a
+nested : Option (Option Int)
+even : Int -> Bool
+  n.10 : Int
+odd : Int -> Bool
+  n.11 : Int
+inc : Int -> Int
+  x.12 : Int
+twice : a -> (a, a)
+  x.13 : a
+  copy.14 : a -> (a, a)
+  y.15 : a
+nest : a -> Int
+  x.16 : a
+operators : Int -> Int -> (Int, Int, Bool, Bool)
+  a.17 : Int
+  b.18 : Int
+equality : Bool -> Bool -> Bool
+  x.19 : Bool
+  y.20 : Bool
+patterns : Option Int -> Int
+  o.21 : Option Int
+  n.22 : Int
+  _s.23 : Option Int
+unit : Void -> Void
+main : Void

@@ -1,0 +1,5 @@
+f : Int
+f =
+  while True
+    break
+main = print f
