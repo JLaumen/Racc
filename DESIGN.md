@@ -17,8 +17,12 @@ the syntax is in `GRAMMAR.md`.
 
 ## Functions
 
-- A function is defined by equations, tried from top to bottom. A clause
-  whose guards all fail falls through to the next clause.
+- A function is defined by equations, tried from top to bottom; local
+  functions too. A clause whose guards all fail falls through to the next
+  clause.
+- A value is a function without parameters.
+- A signature line gives the type of the function or value defined after
+  it, also for state variables.
 - Every `match` and every function must cover all values (checked at
   compile time). Patterns in bindings must always match.
 - Top-level declarations may appear in any order.
@@ -102,6 +106,11 @@ syntax is not designed yet.
 Effects (`io`, ...) are inferred. An `effects` clause can state them,
 including parameters whose effects are passed through (`effects f`). An
 empty clause states that a function is pure.
+
+A value is evaluated once. A dedicated effect, stated in the value's
+signature, makes it evaluated at each use instead (so `roll = rand 1 10`
+can give a new number each time). Its name and details are not designed
+yet.
 
 ## Safety
 

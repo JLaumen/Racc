@@ -11,7 +11,8 @@ emits C.
 ## Working rules
 
 - Minimalism everywhere:
-  - Design: one way to do each thing. Point out redundancy or overlap in the
+  - Design: one way to do each thing; a second way only where it improves
+    the quality of programs. Point out redundancy or overlap in the
     language when you see it.
   - Code: as little code as possible, kept clean.
   - Tests: cover every case and edge case, with as little test code as

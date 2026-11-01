@@ -92,12 +92,11 @@ typeAlias    ::= 'type' UPPER { LOWER } '=' type NEWLINE
 
 ```
 block        ::= INDENT [ stateBlock ] stmt { stmt } DEDENT
-stateBlock   ::= 'state' NEWLINE INDENT stateVar { stateVar } DEDENT
-stateVar     ::= LOWER [ ':' type ] '=' body
+stateBlock   ::= 'state' NEWLINE INDENT stateLine { stateLine } DEDENT
+stateLine    ::= signature | LOWER '=' body
 
 stmt         ::= signature                          -- local signature
-               | LOWER ':' type '=' body            -- annotated binding
-               | LOWER apat { apat } rhs            -- local function
+               | equation                           -- local function or assignment
                | pattern '=' body                   -- binding or assignment
                | 'if' expr NEWLINE block
                  { 'elif' expr NEWLINE block }
@@ -197,7 +196,9 @@ atype        ::= LOWER | UPPER
   `f -x ** 2` is `(f (-x)) ** 2`, while `-x ** 2` is `-(x ** 2)`.
 - In brackets, `|` starts a comprehension only if a generator `p <- e`
   follows it; otherwise it is bitwise or.
-- In a body, `x : T` is a signature and `x : T = e` an annotated binding.
+- `x = e` is an `equation`, not a `pattern` binding.
+- Consecutive equations with the same name form one function, also in a
+  body.
 - `result` may only appear in `ensures`.
 
 ## Not yet designed
