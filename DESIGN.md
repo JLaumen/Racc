@@ -26,14 +26,20 @@ the syntax is in `GRAMMAR.md`.
 - Every `match` and every function must cover all values (checked at
   compile time). Patterns in bindings must always match.
 - Top-level declarations may appear in any order. A top-level value may
-  not depend on itself, directly or through functions; values are evaluated
-  in the order of their dependencies.
+  not depend on itself, directly or through functions. Values are evaluated
+  before `main`, in the order of their dependencies, and otherwise in source
+  order.
 - A block's value is that of its last statement. An `if` with `else` and a
   `match` have the value of their branches; other statements have the
   value `()`. `return`, `break`, `continue`, and a `while True` without a
   `break` for it never finish, so they fit any type.
 - Functions are pure unless they mutate their parameters or have effects.
-- Every program has a `main` of type `Void`, where it starts.
+- Arguments, tuple elements, and operands are evaluated from left to right;
+  `and` and `or` evaluate their right side only when needed.
+- A call of a function to itself whose value it returns directly uses no
+  stack, so such recursion can run as long as a loop.
+- Every program has a `main` of type `Void`, where it starts; when `main`
+  finishes, the program exits with status 0.
 
 ## Scope
 
@@ -153,18 +159,21 @@ yet.
 Every operation that could fail creates a proof obligation. The compiler
 proves it with an SMT solver (Z3) or rejects the program.
 
-| Operation        | Obligation                        |
-|------------------|-----------------------------------|
-| `xs[i]`          | `0 <= i < len xs`                 |
-| `x / y`, `x % y` | `y != 0`                          |
-| `m[k]`           | `k` is a key of `m`               |
-| call to `f`      | `f`'s `requires` clauses hold     |
-| end of `f`       | `f`'s `ensures` clauses hold      |
-| loop iteration   | the loop's `invariant`s hold      |
+| Operation                    | Obligation                    |
+|------------------------------|-------------------------------|
+| `xs[i]`                      | `0 <= i < len xs`             |
+| `x / y`, `x % y`             | `y != 0`                      |
+| `x << n`, `x >> n`, `x ** n` | `n >= 0`                      |
+| `m[k]`                       | `k` is a key of `m`           |
+| call to `f`                  | `f`'s `requires` clauses hold |
+| end of `f`                   | `f`'s `ensures` clauses hold  |
+| loop iteration               | the loop's `invariant`s hold  |
 
 Contracts give the prover facts it cannot find itself; they are not checked
 at runtime. Non-termination, stack overflow, and running out of memory are
-not covered. Until the verifier exists, obligations are checked at runtime.
+not covered. Until the verifier exists, obligations are checked at runtime:
+a failed check prints its location and the reason to stderr, as in
+`f.racc:3:7: error: division by zero`, and exits with status 1.
 
 ## Collections
 
@@ -215,4 +224,7 @@ classes, arithmetic, bitwise, and ordering operators and ranges work on
 `Int` or `Bool`. Where `==`, `!=`, or `print` is used, the type must be
 known by the end of the definition that uses it.
 
-Every call passes all arguments, and division by zero is checked at runtime.
+`print` writes its argument on a line of its own, as in `-12` or `True`.
+
+Every call passes all arguments. Division by zero and negative shifts and
+exponents are checked at runtime.

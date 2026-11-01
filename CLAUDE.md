@@ -49,6 +49,26 @@ The lexer, parser, name resolution, and type checking are done; later
 phases are not (`compile` in `src/Racc.hs`). Left to mutation inference: a local function
 that uses enclosing state cannot be passed as a value.
 
+## Code generation
+
+Decided, not yet built:
+
+- Monomorphization: one C function per type a function is used at.
+- `Int`: a machine word with overflow checks, falling back to our own
+  minimal bignum in the runtime (no GMP, so compiled programs carry no
+  licence).
+- `Void` takes no space; `Bool` and types whose constructors have no
+  fields are C integers; tuples are C structs by value; other constructors
+  are reference-counted heap cells (count, tag, fields), freed with a work
+  list rather than recursion; function values are reference-counted
+  closures, static for top-level functions.
+- Self tail calls become loops.
+- The runtime is a C file in the repo, embedded in the compiler and
+  written into every output, so the output is one self-contained file.
+- C11 with the GCC/Clang overflow builtins.
+- Until exhaustiveness checking exists, an unmatched `match` traps with an
+  internal error.
+
 ## Build
 
 - `cabal build`; `cabal run racc FILE.racc` prints C to stdout;
