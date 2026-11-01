@@ -5,8 +5,8 @@ emits C.
 
 - `README.md`: introduction, for users.
 - `DESIGN.md`: what programs mean.
-- `GRAMMAR.md`: the syntax; alternatives marked `not in v0` are not
-  implemented yet.
+- `GRAMMAR.md`: the syntax; alternatives marked `not in 0.1` are not part
+  of version 0.1.
 
 ## Working rules
 
@@ -22,6 +22,14 @@ emits C.
   even small defaults.
 - When a decision changes, update `DESIGN.md` and `GRAMMAR.md` in the same
   step, including examples.
+
+## Versioning
+
+- SemVer, staying at 0.x while the language may change. One version covers
+  language and compiler; it lives only in `racc.cabal`.
+- Releases happen at milestones; the first is 0.1.0, when everything in
+  DESIGN.md's "Version 0.1" works. A release commit sets the version in
+  `racc.cabal` and is tagged `vX.Y.Z`; release notes go on GitHub only.
 
 ## Status
 

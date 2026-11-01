@@ -1,7 +1,7 @@
 # Racc grammar
 
-The syntax of Racc. Alternatives marked `-- not in v0` are not implemented
-by the first compiler. Meaning and restrictions are in `DESIGN.md`.
+The syntax of Racc. Alternatives marked `-- not in 0.1` are not part of
+version 0.1. Meaning and restrictions are in `DESIGN.md`.
 
 ## Lexical structure
 
@@ -64,12 +64,12 @@ topDecl      ::= signature | function | typeDecl | typeAlias
 
 signature    ::= LOWER ':' [ constraints '=>' ] type NEWLINE
                  [ INDENT clause { clause } DEDENT ]
-constraints  ::= constraint | '(' constraint { ',' constraint } ')'  -- not in v0
+constraints  ::= constraint | '(' constraint { ',' constraint } ')'  -- not in 0.1
 constraint   ::= UPPER atype { atype }
-clause       ::= 'modifies' param { ',' param } NEWLINE           -- not in v0
-               | 'effects' [ param { ',' param } ] NEWLINE        -- not in v0
-               | 'requires' expr NEWLINE                          -- not in v0
-               | 'ensures' expr NEWLINE                           -- not in v0
+clause       ::= 'modifies' param { ',' param } NEWLINE           -- not in 0.1
+               | 'effects' [ param { ',' param } ] NEWLINE        -- not in 0.1
+               | 'requires' expr NEWLINE                          -- not in 0.1
+               | 'ensures' expr NEWLINE                           -- not in 0.1
 param        ::= LOWER | INT
 
 function     ::= equation { equation }        -- same name, consecutive
@@ -107,11 +107,11 @@ stmt         ::= signature                          -- local signature
                | 'break' [ INT ] NEWLINE
                | 'continue' [ INT ] NEWLINE
                | 'pass' NEWLINE
-               | 'yield' [ 'from' ] expr NEWLINE    -- not in v0
+               | 'yield' [ 'from' ] expr NEWLINE    -- not in 0.1
                | expr NEWLINE
 
 loopBlock    ::= INDENT { invariant } stmt { stmt } DEDENT
-invariant    ::= 'invariant' expr NEWLINE           -- not in v0
+invariant    ::= 'invariant' expr NEWLINE           -- not in 0.1
 arm          ::= pattern ( '->' body
                          | NEWLINE INDENT guardArm { guardArm } DEDENT )
 guardArm     ::= '|' guard '->' body
@@ -124,7 +124,7 @@ body.
 
 ```
 expr         ::= lambda | inlineIf | orExpr
-lambda       ::= '\' apat { apat } '->' expr                 -- not in v0
+lambda       ::= '\' apat { apat } '->' expr                 -- not in 0.1
 inlineIf     ::= 'if' expr 'then' expr 'else' expr
 
 orExpr       ::= andExpr { 'or' andExpr }
@@ -133,7 +133,7 @@ notExpr      ::= 'not' notExpr | cmpExpr
 cmpExpr      ::= rangeExpr { cmpOp rangeExpr }
 cmpOp        ::= '==' | '!=' | '<' | '<=' | '>' | '>='
 rangeExpr    ::= bitOr [ rangeOp bitOr [ 'by' bitOr ] ]
-               | 'from' bitOr                                 -- not in v0
+               | 'from' bitOr                                 -- not in 0.1
 rangeOp      ::= 'to' | 'until' | 'downto'
 bitOr        ::= bitXor { '|' bitXor }
 bitXor       ::= bitAnd { '^' bitAnd }
@@ -145,19 +145,19 @@ unary        ::= ( NEG | '~' ) unary | power
 power        ::= app [ '**' unary ]
 app          ::= postfix { arg }
 arg          ::= postfix | ( NEG | '~' ) postfix
-postfix      ::= atom { INDEX expr ']' }                      -- INDEX: not in v0
+postfix      ::= atom { INDEX expr ']' }                      -- INDEX: not in 0.1
 
 atom         ::= INT | LOWER | UPPER | 'result'
                | '(' ')'
                | '(' expr ')'
                | '(' expr ',' expr { ',' expr } ')'
-               | '(' expr '|' qualifiers ')'                  -- not in v0
-               | '(' binOp expr ')' | '(' expr binOp ')'      -- not in v0
-               | '[' [ expr { ',' expr } ] ']'                -- not in v0
-               | '[' expr '|' qualifiers ']'                  -- not in v0
-               | '{' [ expr { ',' expr } ] '}'                -- not in v0
-               | '{' expr ':' expr { ',' expr ':' expr } '}'  -- not in v0
-               | '{' expr [ ':' expr ] '|' qualifiers '}'     -- not in v0
+               | '(' expr '|' qualifiers ')'                  -- not in 0.1
+               | '(' binOp expr ')' | '(' expr binOp ')'      -- not in 0.1
+               | '[' [ expr { ',' expr } ] ']'                -- not in 0.1
+               | '[' expr '|' qualifiers ']'                  -- not in 0.1
+               | '{' [ expr { ',' expr } ] '}'                -- not in 0.1
+               | '{' expr ':' expr { ',' expr ':' expr } '}'  -- not in 0.1
+               | '{' expr [ ':' expr ] '|' qualifiers '}'     -- not in 0.1
 qualifiers   ::= pattern '<-' expr { ',' ( pattern '<-' expr | expr ) }
 binOp        ::= any binary operator symbol except '-'
 ```
@@ -172,7 +172,7 @@ apat         ::= '_' | LOWER | INT | NEG INT | UPPER
                | '(' ')'
                | '(' pattern ')'
                | '(' pattern ',' pattern { ',' pattern } ')'
-               | '[' [ listItem { ',' listItem } ] ']'        -- not in v0
+               | '[' [ listItem { ',' listItem } ] ']'        -- not in 0.1
 listItem     ::= pattern | '..' [ LOWER ]                     -- at most one '..'
 ```
 

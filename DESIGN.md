@@ -155,7 +155,7 @@ shared value copies it first. Without references, values cannot form
 cycles, so reference counting frees everything. The compiler warns where it
 inserts a copy.
 
-## First version (v0)
+## Version 0.1
 
 - `Int`, `Bool`, tuples, and `type` declarations.
 - Functions with equations, guards, and `match`; local functions; `main`.
