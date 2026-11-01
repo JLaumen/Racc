@@ -1,0 +1,4 @@
+test/errors/number-trailing-underscore.racc:1:5: error: invalid number literal `1_`
+  |
+1 | x = 1_
+  |     ^^

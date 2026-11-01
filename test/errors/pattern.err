@@ -1,0 +1,4 @@
+test/errors/pattern.racc:2:7: error: expected a pattern after `,`, found `=`
+  |
+2 |   (a, =) = p
+  |       ^

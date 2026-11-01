@@ -1,0 +1,4 @@
+test/errors/constructor.racc:2:3: error: expected a constructor, found `c`
+  |
+2 |   c
+  |   ^

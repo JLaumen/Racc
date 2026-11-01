@@ -1,0 +1,21 @@
+f : Maybe (List a) -> (Int, b) -> ()
+f 0 = 1
+f -1 = 2
+f (x, y) N () _ = x
+
+g x
+  | x =
+    state
+      s : Int
+      s = 1
+    s
+  | otherwise = 2
+
+type Maybe a
+  Nothing
+  Just a
+
+type T
+  C (List Int) a
+
+type Pair a b = (a, b)

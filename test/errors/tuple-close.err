@@ -1,0 +1,4 @@
+test/errors/tuple-close.racc:1:10: error: expected `,` or `)` after `2`, found the end of the line
+  |
+1 | x = (1, 2
+  |          ^

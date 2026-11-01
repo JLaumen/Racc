@@ -1,0 +1,4 @@
+test/errors/state-indent.racc:3:3: error: expected indented state variables, found `x`
+  |
+3 |   x
+  |   ^

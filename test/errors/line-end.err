@@ -1,0 +1,4 @@
+test/errors/line-end.racc:1:6: error: expected the end of the line after `T`, found `[`
+  |
+1 | f : T[a]
+  |      ^

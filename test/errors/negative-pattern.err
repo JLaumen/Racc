@@ -1,0 +1,4 @@
+test/errors/negative-pattern.racc:2:5: error: expected a number after `-`, found `a`
+  |
+2 |   - a = p
+  |     ^

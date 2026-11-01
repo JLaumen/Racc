@@ -1,0 +1,4 @@
+test/errors/inline-if-then.racc:1:12: error: expected `then` after `b`, found `else`
+  |
+1 | x = if a b else c
+  |            ^^^^

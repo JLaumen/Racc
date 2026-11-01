@@ -1,0 +1,4 @@
+test/errors/state-equals.racc:3:7: error: expected `=` after `x`, found `1`
+  |
+3 |     x 1
+  |       ^

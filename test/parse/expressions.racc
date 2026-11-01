@@ -1,0 +1,10 @@
+logic = a or b or c and not d == e
+comparison = a == b != c < d <= e > f >= g + 1
+ranges = (1 to n by 2, a until b, a downto b)
+bitwise = a | b ^ c & d << e + f * g
+arithmetic = a >> b - c - d / e % f
+power = -a ** b ** ~c
+application = f A -b ~c
+applicationPower = f (g a) ** 2
+parentheses = ((a), (), B 1)
+inlineIf = if a then b else c + 1

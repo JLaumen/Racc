@@ -1,0 +1,4 @@
+test/errors/dedent-block.racc:4:3: error: expected an indented block, found a less indented line
+  |
+4 |   y
+  |   ^

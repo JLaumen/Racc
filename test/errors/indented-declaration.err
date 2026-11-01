@@ -1,0 +1,4 @@
+test/errors/indented-declaration.racc:1:3: error: expected a declaration, found a more indented line
+  |
+1 |   f = 1
+  |   ^

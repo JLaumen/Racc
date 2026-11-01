@@ -1,0 +1,5 @@
+f =
+  if a
+    state
+      x = 1
+    x

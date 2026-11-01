@@ -1,0 +1,4 @@
+test/errors/comprehension.racc:1:12: error: comprehensions are not part of version 0.1
+  |
+1 | x = (a | b <- c)
+  |            ^^

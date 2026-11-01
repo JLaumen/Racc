@@ -1,0 +1,4 @@
+test/errors/for-in.racc:2:9: error: expected `in` after `x`, found `y`
+  |
+2 |   for x y
+  |         ^

@@ -1,0 +1,4 @@
+test/errors/result.racc:1:7: error: `result` is not part of version 0.1
+  |
+1 | x = f result
+  |       ^^^^^^

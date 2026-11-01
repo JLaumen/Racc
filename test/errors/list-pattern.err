@@ -1,0 +1,4 @@
+test/errors/list-pattern.racc:2:3: error: list patterns are not part of version 0.1
+  |
+2 |   [a] = p
+  |   ^

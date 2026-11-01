@@ -1,0 +1,4 @@
+test/errors/guard-bar.racc:3:3: error: expected `|`, found `b`
+  |
+3 |   b = 2
+  |   ^

@@ -1,0 +1,4 @@
+test/errors/binding-equals.racc:2:10: error: expected `=` after `)`, found `c`
+  |
+2 |   (a, b) c = d
+  |          ^

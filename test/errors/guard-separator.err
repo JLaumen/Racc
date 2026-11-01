@@ -1,0 +1,4 @@
+test/errors/guard-separator.racc:2:8: error: expected `=` after `1`, found the end of the line
+  |
+2 |   | a 1
+  |        ^

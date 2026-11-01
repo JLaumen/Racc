@@ -1,0 +1,4 @@
+test/errors/open-range.racc:1:5: error: ranges without an end are not part of version 0.1
+  |
+1 | x = from 1
+  |     ^^^^

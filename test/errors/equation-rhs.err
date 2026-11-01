@@ -1,0 +1,4 @@
+test/errors/equation-rhs.racc:1:2: error: expected `=` or guards after `f`, found the end of the line
+  |
+1 | f
+  |  ^

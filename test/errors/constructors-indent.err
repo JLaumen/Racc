@@ -1,0 +1,4 @@
+test/errors/constructors-indent.racc:2:1: error: expected indented constructors, found `x`
+  |
+2 | x
+  | ^

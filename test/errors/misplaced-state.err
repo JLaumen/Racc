@@ -1,0 +1,4 @@
+test/errors/misplaced-state.racc:3:5: error: `state` is only allowed at the start of a function body
+  |
+3 |     state
+  |     ^^^^^

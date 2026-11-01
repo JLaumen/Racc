@@ -1,0 +1,3 @@
+(sig collatz (-> Int Int))
+(eq collatz (n) (block (state (var x n) (var steps 0)) (while (cmp x != 1) (block (if ((cmp (% x 2) == 0) (block (eq x () (/ x 2)))) (else (block (eq x () (+ (* 3 x) 1))))) (eq steps () (+ steps 1)))) steps))
+(eq main () (block (app print (app collatz 27))))

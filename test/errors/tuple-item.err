@@ -1,0 +1,4 @@
+test/errors/tuple-item.racc:1:9: error: expected an expression after `,`, found `)`
+  |
+1 | x = (1, )
+  |         ^

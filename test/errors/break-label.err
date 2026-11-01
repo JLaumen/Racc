@@ -1,0 +1,4 @@
+test/errors/break-label.racc:2:9: error: expected a number or the end of the line after `break`, found `x`
+  |
+2 |   break x
+  |         ^

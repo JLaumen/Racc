@@ -18,12 +18,15 @@ module Racc.Syntax
     RangeOp (..),
     Pattern (..),
     Type (..),
+    sexpr,
   )
 where
 
 import Data.ByteString (ByteString)
+import Data.ByteString.Char8 qualified as BC
+import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty)
-import Racc.Diagnostic (Located)
+import Racc.Diagnostic (Located (Located))
 
 type Name = ByteString
 
@@ -123,3 +126,130 @@ data Type
   | TyUnit
   | -- | Two or more elements.
     TyTuple [Located Type]
+
+-- * Printing as S-expressions
+
+-- | A declaration as one line, such as @(eq f (x) (+ x 1))@.
+sexpr :: Located Decl -> String
+sexpr (Located _ d) = case d of
+  SignatureDecl s -> signature s
+  EquationDecl e -> equation e
+  TypeDecl n vs cs -> node (["type", name n, node (map name vs)] <> [node (name c : map typ ts) | Constructor c ts <- toList cs])
+  TypeAlias n vs t -> node ["alias", name n, node (map name vs), typ t]
+
+node :: [String] -> String
+node xs = "(" <> unwords xs <> ")"
+
+name :: Located ByteString -> String
+name (Located _ n) = BC.unpack n
+
+signature :: Signature -> String
+signature (Signature n t) = node ["sig", name n, typ t]
+
+equation :: Equation -> String
+equation (Equation n ps r) = node ["eq", name n, node (map pat ps), rhs r]
+
+rhs :: Rhs -> String
+rhs = \case
+  Plain b -> body b
+  Guarded gs -> node ("guards" : [node [guard g, body b] | (g, b) <- toList gs])
+  where
+    guard = \case
+      Otherwise -> "otherwise"
+      Guard e -> expr e
+
+body :: Body -> String
+body = \case
+  ExprBody e -> expr e
+  BlockBody b -> block b
+
+block :: Block -> String
+block (Block sv ss) = node ("block" : [node ("state" : map stateLine sv) | not (null sv)] <> map stmt (toList ss))
+  where
+    stateLine = \case
+      StateSignature s -> signature s
+      StateVar n b -> node ["var", name n, body b]
+
+stmt :: Located Stmt -> String
+stmt (Located _ s) = case s of
+  LocalSignature sg -> signature sg
+  LocalEquation e -> equation e
+  Bind p b -> node ["bind", pat p, body b]
+  If bs e -> node ("if" : [node [expr c, block b] | (c, b) <- toList bs] <> [node ["else", block b] | Just b <- [e]])
+  While c b -> node ["while", expr c, block b]
+  For p e b -> node ["for", pat p, expr e, block b]
+  Match e arms -> node ("match" : expr e : [node [pat p, rhs r] | (p, r) <- toList arms])
+  Return e -> node ("return" : map expr (toList e))
+  Break n -> node ("break" : [show i | Located _ i <- toList n])
+  Continue n -> node ("continue" : [show i | Located _ i <- toList n])
+  Pass -> "pass"
+  ExprStmt e -> expr e
+
+expr :: Located Expr -> String
+expr (Located _ e) = case e of
+  Var n -> BC.unpack n
+  Con n -> BC.unpack n
+  Lit n -> show n
+  Unit -> "()"
+  Tuple es -> node ("tuple" : map expr es)
+  App f as -> node ("app" : map expr (f : toList as))
+  Unary op a -> node [unaryOp op, expr a]
+  Binary op a b -> node [binaryOp op, expr a, expr b]
+  Compare a rest -> node ("cmp" : expr a : concat [[compareOp op, expr b] | (op, b) <- toList rest])
+  Range a op b c -> node ([rangeOp op, expr a, expr b] <> map expr (toList c))
+  IfExpr c a b -> node ["if", expr c, expr a, expr b]
+  where
+    unaryOp :: UnaryOp -> String
+    unaryOp = \case
+      Neg -> "neg"
+      Complement -> "~"
+      Not -> "not"
+    binaryOp :: BinaryOp -> String
+    binaryOp = \case
+      Or -> "or"
+      And -> "and"
+      BitOr -> "|"
+      BitXor -> "^"
+      BitAnd -> "&"
+      ShiftLeft -> "<<"
+      ShiftRight -> ">>"
+      Add -> "+"
+      Sub -> "-"
+      Mul -> "*"
+      Div -> "/"
+      Mod -> "%"
+      Pow -> "**"
+    compareOp :: CompareOp -> String
+    compareOp = \case
+      Equal -> "=="
+      NotEqual -> "!="
+      Less -> "<"
+      LessEqual -> "<="
+      Greater -> ">"
+      GreaterEqual -> ">="
+    rangeOp :: RangeOp -> String
+    rangeOp = \case
+      To -> "to"
+      Until -> "until"
+      Downto -> "downto"
+
+pat :: Located Pattern -> String
+pat (Located _ p) = case p of
+  PWild -> "_"
+  PVar n -> BC.unpack n
+  PLit n -> show n
+  PUnit -> "()"
+  PCon n [] -> BC.unpack n
+  PCon n ps -> node (BC.unpack n : map pat ps)
+  PTuple ps -> node ("tuple" : map pat ps)
+  POr ps -> node ("or" : map pat (toList ps))
+  PAs q n -> node ["as", pat q, name n]
+
+typ :: Located Type -> String
+typ (Located _ t) = case t of
+  TyVar n -> BC.unpack n
+  TyCon n [] -> BC.unpack n
+  TyCon n ts -> node (BC.unpack n : map typ ts)
+  TyFun a b -> node ["->", typ a, typ b]
+  TyUnit -> "()"
+  TyTuple ts -> node ("tuple" : map typ ts)

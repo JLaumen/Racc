@@ -1,0 +1,63 @@
+localFunctions =
+  g : Int -> Int
+  g y = y
+  g 1
+
+guards =
+  g y
+    | y > 0 = 1
+    | otherwise = 2
+  g
+
+stateVariables =
+  g =
+    state
+      s = 1
+    s
+  g
+
+bindings =
+  (a, _) = p
+  Just (P b) = q
+  A or B as c = r
+  x as y = t
+  x or y = u
+  (-1, ()) = s
+  a
+
+ifs =
+  if (if a then b else c)
+    d
+  if e
+    f
+  elif g
+    h
+  else
+    i
+
+expressions =
+  if a then b else c
+  Foo 1
+
+loops =
+  while a
+    b
+  for (i, j) in 1 to n
+    pass
+
+matches =
+  match x
+    Just y -> y
+    N
+      | a -> 1
+      | otherwise -> 2
+    _ ->
+      pass
+
+jumps =
+  return
+  return a
+  break
+  break 2
+  continue
+  continue 2

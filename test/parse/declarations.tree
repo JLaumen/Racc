@@ -1,0 +1,8 @@
+(sig f (-> (Maybe (List a)) (-> (tuple Int b) ())))
+(eq f (0) 1)
+(eq f (-1) 2)
+(eq f ((tuple x y) N () _) x)
+(eq g (x) (guards (x (block (state (sig s Int) (var s 1)) s)) (otherwise 2)))
+(type Maybe (a) (Nothing) (Just a))
+(type T () (C (List Int) a))
+(alias Pair (a b) (tuple a b))

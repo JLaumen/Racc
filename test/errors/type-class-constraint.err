@@ -1,0 +1,4 @@
+test/errors/type-class-constraint.racc:1:10: error: type class constraints are not part of version 0.1
+  |
+1 | f : Eq a => a
+  |          ^^

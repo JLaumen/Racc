@@ -1,0 +1,4 @@
+test/errors/missing-operand.racc:1:8: error: expected an expression after `+`, found the end of the line
+  |
+1 | x = 1 +
+  |        ^

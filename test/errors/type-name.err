@@ -1,0 +1,4 @@
+test/errors/type-name.racc:1:6: error: expected a type name after `type`, found `x`
+  |
+1 | type x
+  |      ^

@@ -1,0 +1,4 @@
+test/errors/loop-invariant.racc:3:5: error: loop invariants are not part of version 0.1
+  |
+3 |     invariant b
+  |     ^^^^^^^^^

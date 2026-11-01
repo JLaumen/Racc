@@ -1,0 +1,4 @@
+test/errors/number-double-underscore.racc:1:5: error: invalid number literal `1__0`
+  |
+1 | x = 1__0
+  |     ^^^^

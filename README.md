@@ -25,7 +25,12 @@ main =
 
 ## Status
 
-The language is being designed; there is no compiler yet.
+The language is being designed. The compiler parses programs but does
+not generate code yet. To check a program and see its syntax tree:
+
+```
+cabal run racc -- --parse FILE.racc
+```
 
 - `DESIGN.md`: what programs mean.
 - `GRAMMAR.md`: the syntax.

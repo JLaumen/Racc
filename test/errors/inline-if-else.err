@@ -1,0 +1,4 @@
+test/errors/inline-if-else.racc:1:18: error: expected `else` after `c`, found the end of the line
+  |
+1 | x = if a then b c
+  |                  ^

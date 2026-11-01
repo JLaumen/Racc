@@ -1,0 +1,4 @@
+test/errors/lone-dot.racc:1:5: error: unexpected character `.`
+  |
+1 | x = .
+  |     ^

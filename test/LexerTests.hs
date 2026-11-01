@@ -4,7 +4,7 @@ module LexerTests (tests, keywords, symbols) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BC
-import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Pos (Pos), Span (Span))
+import Racc.Diagnostic (Located (Located))
 import Racc.Lexer (Token (TDedent, TEnd, TIndent, TIndex, TInt, TKeyword, TLower, TNeg, TNewline, TSymbol, TUpper), tokenize)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
@@ -14,7 +14,6 @@ tests =
   testGroup "lexer" $
     [testCase (show src) (tokens src @?= Right (ts <> [TNewline, TEnd])) | (src, ts) <- oneLine]
       <> [testCase (show src) (tokens src @?= Right ts) | (src, ts) <- files]
-      <> [testCase (show src) (failure src @?= e) | (src, e) <- rejected]
 
 -- | Sources of one logical line, without the final NEWLINE and END.
 oneLine :: [(ByteString, [Token])]
@@ -63,28 +62,11 @@ files =
     (")\n  a\n", [s ")", TNewline, TIndent, l "a", TNewline, TDedent, TEnd])
   ]
 
--- | One input for each way the lexer can fail, with its error.
-rejected :: [(ByteString, String)]
-rejected =
-  [ ("f x =\n\tx\n", "2:1: tab character; indent with spaces"),
-    ("x = 1\ry = 2\n", "1:6: carriage return without a line feed"),
-    ("x = caf\195\169\n", "1:8: non-ASCII character outside a comment"),
-    ("!", "1:1: unexpected character `!`"),
-    (".", "1:1: unexpected character `.`"),
-    ("12abc", "1:1: invalid number literal `12abc`"),
-    ("1__0", "1:1: invalid number literal `1__0`"),
-    ("1_", "1:1: invalid number literal `1_`"),
-    ("f x =\n    if x\n      1\n  2\n", "4:3: indentation does not match any enclosing block")
-  ]
-
 l, u, k, s :: ByteString -> Token
 l = TLower
 u = TUpper
 k = TKeyword
 s = TSymbol
-
-failure :: ByteString -> String
-failure = either (\(Diagnostic (Span (Pos ln c) _) m) -> show ln <> ":" <> show c <> ": " <> m) (const "accepted") . tokenize
 
 tokens :: ByteString -> Either String [Token]
 tokens = either (Left . show) (Right . map (\(Located _ t) -> t)) . tokenize

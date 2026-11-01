@@ -1,0 +1,4 @@
+test/errors/match-arms-indent.racc:3:3: error: expected indented match arms, found `y`
+  |
+3 |   y
+  |   ^

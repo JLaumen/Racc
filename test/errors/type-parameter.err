@@ -1,0 +1,4 @@
+test/errors/type-parameter.racc:1:10: error: expected a type parameter, `=`, or the end of the line after `x`, found `1`
+  |
+1 | type T x 1
+  |          ^

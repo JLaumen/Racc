@@ -1,0 +1,4 @@
+test/errors/type.racc:1:5: error: expected a type after `:`, found `->`
+  |
+1 | f : -> Int
+  |     ^^

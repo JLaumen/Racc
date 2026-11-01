@@ -1,0 +1,4 @@
+test/errors/left-section.racc:1:6: error: operator sections are not part of version 0.1
+  |
+1 | x = (+ 1)
+  |      ^

@@ -25,9 +25,9 @@ emits C.
   even small defaults.
 - When a decision changes, update `DESIGN.md` and `GRAMMAR.md` in the same
   step, including examples.
-- Before committing a significant change, do a pass over it for the
-  minimalism rules above, then run a code review (`/code-review`) on it
-  and address the findings.
+- Before committing any change that is not minor, do a pass over it for
+  the minimalism rules above, then run a code review (`/code-review`) on
+  it and address the findings.
 
 ## Versioning
 
@@ -50,14 +50,16 @@ The lexer and parser are done; later phases are not (`compile` in
 
 ## Build
 
-- `cabal build`; `cabal run racc -- FILE.racc` prints C to stdout.
-- `cabal test`: unit tests plus golden tests. Each `test/run/X.racc` is
-  compiled with `cc`, run, and its output compared with `X.out`; each
-  `test/errors/X.racc` must fail with the rendered error in `X.err`. Unit
-  tests check every error message; the error goldens only cover rendering.
+- `cabal build`; `cabal run racc -- FILE.racc` prints C to stdout, and
+  `--parse` before the file prints the syntax tree instead.
+- `cabal test`: golden tests, in files so they can also be run by hand.
+  Each `test/parse/X.racc` is parsed and its tree compared with `X.tree`;
+  each `test/run/X.racc` is compiled with `cc`, run, and its output
+  compared with `X.out`; each `test/errors/X.racc` must fail with the
+  error in `X.err`, one file per way to fail. Unit tests cover only what
+  files can't show (tokens, spans). A property test checks that lexing and
+  parsing never crash or hang, on the golden inputs with random edits.
   `--test-options=--accept` writes missing or changed golden files.
-  A property test checks that lexing and parsing never crash or hang, on
-  the unit test inputs with random edits.
 - `scripts/check`: everything CI runs: ormolu, cabal-gild, hlint, build,
   weeder, tests. Run it before committing. Tool versions are pinned in
   `.github/workflows/ci.yml`; install them with `cabal install`.

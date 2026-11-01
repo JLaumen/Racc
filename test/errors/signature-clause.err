@@ -1,0 +1,4 @@
+test/errors/signature-clause.racc:2:3: error: signature clauses are not part of version 0.1
+  |
+2 |   requires x
+  |   ^^^^^^^^
