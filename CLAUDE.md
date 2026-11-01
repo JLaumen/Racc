@@ -50,8 +50,8 @@ The lexer and parser are done; later phases are not (`compile` in
 
 ## Build
 
-- `cabal build`; `cabal run racc -- FILE.racc` prints C to stdout, and
-  `--parse` before the file prints the syntax tree instead.
+- `cabal build`; `cabal run racc FILE.racc` prints C to stdout;
+  `cabal run racc parse FILE.racc` prints the syntax tree instead.
 - `cabal test`: golden tests, in files so they can also be run by hand.
   Each `test/parse/X.racc` is parsed and its tree compared with `X.tree`;
   each `test/run/X.racc` is compiled with `cc`, run, and its output

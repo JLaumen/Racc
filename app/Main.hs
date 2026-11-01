@@ -10,9 +10,9 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["--parse", file] -> output parseTree file
-    [file@(c : _)] | c /= '-' -> output compile file
-    _ -> die "usage: racc [--parse] FILE.racc"
+    ["parse", file] -> output parseTree file
+    [file@(c : _)] | c /= '-', file /= "parse" -> output compile file
+    _ -> die "usage: racc [parse] FILE.racc"
   where
     output f file = do
       src <- BS.readFile file
