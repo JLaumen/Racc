@@ -1,45 +1,40 @@
-test/types/statements.racc:54:3: warning: the value of this statement, of type `Int`, is discarded
+test/types/statements.racc:66:3: warning: the value of this statement, of type `Int`, is discarded
    |
-54 |   x + 1
+66 |   x + 1
    |   ^^^^^
 
-test/types/statements.racc:56:5: warning: the value of this statement, of type `Int`, is discarded
+test/types/statements.racc:68:5: warning: the value of this statement, of type `Int`, is discarded
    |
-56 |     x
+68 |     x
    |     ^
 
-test/types/statements.racc:60:10: warning: the value of this statement, of type `Bool`, is discarded
+test/types/statements.racc:70:10: warning: the value of this statement, of type `Bool`, is discarded
    |
-60 |     0 -> True
+70 |     0 -> True
    |          ^^^^
-
-test/types/statements.racc:61:10: warning: the value of this statement, of type `Int`, is discarded
-   |
-61 |     _ -> 1
-   |          ^
-
-test/types/statements.racc:69:3: warning: the value of this statement, of type `a`, is discarded
-   |
-69 |   y
-   |   ^
 sign : Int -> Int
   x.0 : Int
-early : Int -> Int
+clamp : Int -> Int
   x.1 : Int
+show : Int -> Void
+  x.2 : Int
 search : Int -> Int
-  n.2 : Int
-  i.3 : Int
+  n.3 : Int
+  i.4 : Int
 loops : Int -> Void
-  n.4 : Int
-  total.5 : Int
-  a.6 : Int
-  b.7 : Int
-  i.8 : Int
-  j.9 : Int
+  n.5 : Int
+  total.6 : Int
+  a.7 : Int
+  b.8 : Int
+  i.9 : Int
+  j.10 : Int
+blocks : Bool -> Int
+  c.11 : Bool
+  v.12 : Int
+  p.13 : Int
+  q.14 : Int
 keep : a -> a
-  x.10 : a
-  s.11 : a
+  x.15 : a
+  s.16 : a
 discards : Int -> Void
-  x.12 : Int
-ignore : a -> Void
-  y.13 : a
+  x.17 : Int

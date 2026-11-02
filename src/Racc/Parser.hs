@@ -73,7 +73,7 @@ equation :: P (Equation Name)
 equation = do
   n <- name
   ps <- manyWhile startsApat apat
-  Equation n ps <$> rhs "=" True
+  Equation n ps <$> rhs "=" (body True)
 
 typeDecl :: P (Decl Name)
 typeDecl = do
@@ -86,13 +86,13 @@ typeDecl = do
   where
     constructor = Constructor <$> upper "a constructor" <*> manyWhile startsAtype atype <* endLine
 
--- | The rest of an equation (`sep` is `=`) or of a match arm (`sep` is `->`).
--- `st` tells whether a block may start with `state`.
-rhs :: ByteString -> Bool -> P (Rhs Name)
-rhs sep st = do
+-- | The rest of an equation (`sep` is `=`) or of a match arm (`sep` is `->`),
+-- with what follows `sep`.
+rhs :: ByteString -> P (Body Name) -> P (Rhs Name)
+rhs sep after = do
   ts <- traverse peekAt [0, 1, 2]
   case ts of
-    TSymbol x : _ | x == sep -> next >> Plain <$> body st
+    TSymbol x : _ | x == sep -> next >> Plain <$> after
     [TNewline, TIndent, TSymbol "|"] -> next >> next >> Guarded <$> untilDedent guardLine
     _ -> expected (quote sep <> " or guards")
   where
@@ -103,7 +103,30 @@ rhs sep st = do
           TKeyword "otherwise" -> Otherwise <$ next
           _ -> Guard <$> expr
       expect (TSymbol sep) (quote sep)
-      (g,) <$> body st
+      (g,) <$> after
+
+-- | What follows `->` in a match arm: a block, or a simple statement on the
+-- same line, as a block of its own.
+armBody :: P (Body Name)
+armBody =
+  peek >>= \case
+    TNewline -> body False
+    _ -> do
+      s@(Located sp x) <- located stmt
+      if simple x
+        then pure (BlockBody (Block [] (s :| [])))
+        else lift (Left (Diagnostic Error sp "only a simple statement can follow `->` on the same line; start a block on the next line"))
+  where
+    simple :: Stmt Name -> Bool
+    simple = \case
+      LocalEquation (Equation _ ps _) -> null ps
+      Bind _ _ -> True
+      Return _ -> True
+      Break _ -> True
+      Continue _ -> True
+      Pass -> True
+      ExprStmt _ -> True
+      _ -> False
 
 body :: Bool -> P (Body Name)
 body st =
@@ -141,7 +164,7 @@ stmt =
     TKeyword "while" -> next >> While <$> expr <* endLine <*> block False
     TKeyword "for" -> next >> For <$> pat <* expect (TKeyword "in") "`in`" <*> range <* endLine <*> block False
     TKeyword "match" ->
-      next >> Match <$> expr <* endLine <*> indented "indented match arms" ((,) <$> pat <*> rhs "->" False)
+      next >> Match <$> expr <* endLine <*> indented "indented match arms" ((,) <$> pat <*> rhs "->" armBody)
     TKeyword "return" -> next >> Return <$> unlessEnd expr <* endLine
     TKeyword "break" -> next >> Break <$> unlessEnd int <* endLine
     TKeyword "continue" -> next >> Continue <$> unlessEnd int <* endLine

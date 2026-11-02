@@ -1,19 +1,19 @@
--- A block's value is that of its last statement.
+-- A block gives its value with `return`; a one-line body is its value.
 sign x =
   if x < 0
-    -1
+    return -1
   elif x == 0
-    0
-  else
-    1
+    return 0
+  return 1
+clamp x = if x < 0 then 0 else x
 
--- `return`, `break`, `continue`, and `while True` without a `break` fit
--- any type.
-early x =
+-- A body whose result is `Void` may end without `return`, and one that
+-- never ends needs none.
+show x =
   if x > 0
-    return 1
-  else
-    x
+    print x
+    return
+  print 0
 search n =
   state
     i = 0
@@ -21,6 +21,8 @@ search n =
     if i * i >= n
       return i
     i = i + 1
+
+-- After `->`, a simple statement may follow on the same line.
 loops n =
   state
     total : Int
@@ -34,11 +36,22 @@ loops n =
     else
       continue
   for j in n downto 0
-    total = total - j
+    match j
+      0 -> break
+      _ -> total = total - j
   while total > 0
     total = total - 1
     pass
-  return
+
+-- The block of a value or binding is a body of its own.
+blocks c =
+  v =
+    if c
+      return 1
+    return 2
+  (p, q) =
+    return (v, v)
+  return p + q
 
 -- A state variable's signature may use those of its function.
 keep : a -> a
@@ -46,25 +59,14 @@ keep x =
   state
     s : a
     s = x
-  s
+  return s
 
--- Values of statements other than the last are discarded, those of an
--- `if` or `match` per branch.
+-- A statement's value is discarded with a warning.
 discards x =
   x + 1
   if x > 0
     x
-  else
-    print x
   match x
     0 -> True
-    _ -> 1
-  if x > 0
-    return
-  else
-    pass
-  ignore x
+    _ -> pass
   print x
-ignore y =
-  y
-  ()

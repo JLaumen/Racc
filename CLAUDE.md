@@ -46,17 +46,26 @@ emits C.
 ## Status
 
 The lexer, parser, name resolution, and type checking are done; later
-phases are not (`compile` in `src/Racc.hs`). Left to mutation inference: a local function
-that uses enclosing state cannot be passed as a value.
+phases are not (`compile` in `src/Racc.hs`).
 
 ## Code generation
 
 Decided, not yet built:
 
+- Typed tree, then a monomorphic, lambda-lifted IR (statements, named
+  temporaries, explicit reference counting), then C.
 - Monomorphization: one C function per type a function is used at.
-- `Int`: a machine word with overflow checks, falling back to our own
+- `Int`: a tagged machine word (low bit 1: a 63-bit integer; otherwise a
+  pointer to a bignum), with overflow checks falling back to our own
   minimal bignum in the runtime (no GMP, so compiled programs carry no
   licence).
+- Reference counting in the style of Perceus: functions own their
+  arguments, and a value is dropped right after its last use.
+- Patterns are compiled clause by clause, each falling through to the next.
+- C names: `r_f` for top-level `f`, with the types of an instance appended
+  (`r_f_Int`); `x_3` for local `x.3`; `'` becomes `_q`.
+- A local function that uses enclosing state becomes a C function with a
+  pointer parameter per state variable it uses.
 - `Void` takes no space; `Bool` and types whose constructors have no
   fields are C integers; tuples are C structs by value; other constructors
   are reference-counted heap cells (count, tag, fields), freed with a work

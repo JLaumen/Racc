@@ -17,7 +17,7 @@ collatz n =
     else
       x = 3 * x + 1
     steps = steps + 1
-  steps
+  return steps
 
 main =
   print (collatz 27)

@@ -12,6 +12,8 @@ import Data.ByteString.Char8 qualified as BC
 import Data.Containers.ListUtils (nubOrdOn)
 import Data.Foldable (for_, toList, traverse_)
 import Data.Graph (SCC (CyclicSCC), stronglyConnComp)
+import Data.IntMap.Strict (IntMap)
+import Data.IntMap.Strict qualified as IntMap
 import Data.IntSet (IntSet)
 import Data.IntSet qualified as IntSet
 import Data.List (groupBy, minimumBy, sort)
@@ -73,7 +75,14 @@ data S = S
     usedGlobals :: Set Name,
     -- | Each top-level function: whether it is a value, its name, and the
     -- top-level names it uses.
-    functions :: [(Bool, Located Name, [Name])]
+    functions :: [(Bool, Located Name, [Name])],
+    -- | The smallest depth of the state that the current function uses.
+    touched :: !Int,
+    -- | Local functions that use enclosing state, with the smallest depth
+    -- of that state and their number of parameters.
+    stateful :: IntMap (Int, Int),
+    -- | Each use of a local, with the number of arguments it is applied to.
+    applied :: [(Int, Int, Located Name)]
   }
 
 type R = State S
@@ -96,8 +105,14 @@ data Entry = Entry Ref Int Bool
 resolve :: [Located (Decl Name)] -> Result [Located (Decl Ref)]
 resolve ds = (diags, out <$ guard (all (\(Diagnostic sev _ _) -> sev == Warning) diags))
   where
-    (out, st) = runState (program ds) (S 0 [] [] IntSet.empty Set.empty [])
-    diags = diagnostics st <> unused
+    (out, st) = runState (program ds) (S 0 [] [] IntSet.empty Set.empty [] maxBound IntMap.empty [])
+    diags = diagnostics st <> unused <> stateValues
+    stateValues =
+      [ Diagnostic Error s (quote x <> " uses the state of an enclosing function, so it can only be called")
+      | (i, n, Located s x) <- applied st,
+        Just (_, k) <- [IntMap.lookup i (stateful st)],
+        n < k
+      ]
     unused =
       [ Diagnostic Warning s (quote x <> " is unused")
       | (i, Located s x) <- locals st,
@@ -194,7 +209,16 @@ decls env (Located s d : rest) = case d of
 -- | The equations of a function that `r` refers to; each is a new function
 -- scope.
 function :: Env -> Ref -> NonEmpty (Located (Equation Name)) -> R (NonEmpty (Located (Equation Ref)))
-function env r eqs@(Located _ (Equation _ ps _) :| _) = traverse (traverse clause) eqs
+function env r eqs@(Located _ (Equation _ ps _) :| _) = do
+  outer <- gets touched
+  modify (\st -> st {touched = maxBound})
+  out <- traverse (traverse clause) eqs
+  t <- gets touched
+  -- A value uses state where it is defined, a function where it is called.
+  modify (\st -> st {touched = if null ps then min outer t else outer})
+  for_ [i | not (null ps), t <= depth env, Local _ i <- [r]] $ \i ->
+    modify (\st -> st {stateful = IntMap.insert i (t, length ps) (stateful st)})
+  pure out
   where
     clause (Equation (Located s x) qs body') = do
       when (length qs /= length ps) (report s ("the equations of " <> quote x <> " have different numbers of parameters"))
@@ -229,12 +253,19 @@ refOf env x = maybe (Global x) (\(Entry r _ _) -> r) (Map.lookup x (values env))
 
 use :: Env -> Span -> Name -> R Ref
 use env s x = case Map.lookup x (values env) of
-  Just (Entry r _ _) -> do
+  Just (Entry r d isPlace) -> do
+    when isPlace (touch d)
     case r of
-      Local _ i -> modify (\st -> st {used = IntSet.insert i (used st)})
+      Local _ i -> do
+        modify (\st -> st {used = IntSet.insert i (used st)})
+        gets (IntMap.lookup i . stateful) >>= traverse_ (touch . fst)
       Global n -> modify (\st -> st {usedGlobals = Set.insert n (usedGlobals st)})
     pure r
   Nothing -> Global x <$ report s (quote x <> " is not defined")
+
+-- | Notes that the current function uses state of a function at depth `d`.
+touch :: Int -> R ()
+touch d = modify (\st -> st {touched = min d (touched st)})
 
 report :: Span -> String -> R ()
 report s msg = modify (\st -> st {diagnostics = Diagnostic Error s msg : diagnostics st})
@@ -300,8 +331,9 @@ stmt env (Located s st) rest = case st of
       _ -> (env, sig (Global x) :| [], rest) <$ report sx (unsigned x)
   LocalEquation e@(Equation lx@(Located sx x) ps r) -> case Map.lookup x (values env) of
     Just (Entry v d isPlace) | null ps && (isPlace || d == depth env) -> do
+      when isPlace (touch d)
       unless isPlace (report sx (quote x <> " is not a state variable, so it can't be assigned"))
-      one (LocalEquation . Equation (Located sx v) [] <$> rhs env r)
+      one (LocalEquation . Equation (Located sx v) [] <$> rhs env {loops = 0} r)
     _ -> do
       let (more, rest') = span (\o -> not (null ps) && stmtName o == Just x) rest
       (env', v) <- define False env lx
@@ -310,12 +342,14 @@ stmt env (Located s st) rest = case st of
       for_ [i | Local _ i <- [v]] $ \i -> modify (\t -> t {used = IntSet.delete i (used t)})
       pure (env', fmap LocalEquation <$> out, rest')
   Bind p@(Located sp _) b -> do
-    b' <- body env b
+    -- A block here is a body of its own, which no loop is around.
+    b' <- body env {loops = 0} b
     let xs = vars p
         places = Map.fromList [(x, r) | Located _ x <- xs, Just r <- [place env x]]
         new = [x | x@(Located _ n) <- xs, Map.notMember n places]
     when (not (Map.null places) && not (null new)) $
       report sp "a pattern must either assign state variables or define new names, not both"
+    for_ [d | Located _ x <- xs, Just (Entry _ d True) <- [Map.lookup x (values env)]] touch
     (env', m) <- defineAll env new
     p' <- pat env (places <> m) p
     pure (env', Located s (Bind p' b') :| [], rest)
@@ -358,11 +392,12 @@ count n w = show n <> " " <> w <> if n == 1 then "" else "s"
 expr :: Env -> Located (Expr Name) -> R (Located (Expr Ref))
 expr env (Located s e) =
   Located s <$> case e of
-    Var x -> Var <$> use env s x
+    Var x -> Var <$> local 0 s x
     Con c -> Con c <$ constructor env s c Nothing
     Lit n -> pure (Lit n)
     Unit -> pure Unit
     Tuple es -> Tuple <$> traverse go es
+    App (Located sf (Var x)) as -> App . Located sf . Var <$> local (length as) sf x <*> traverse go as
     App f as -> App <$> go f <*> traverse go as
     Unary op a -> Unary op <$> go a
     Binary op a b -> Binary op <$> go a <*> go b
@@ -370,6 +405,10 @@ expr env (Located s e) =
     IfExpr c a b -> IfExpr <$> go c <*> go a <*> go b
   where
     go = expr env
+    local n s' x = do
+      r <- use env s' x
+      for_ [i | Local _ i <- [r]] $ \i -> modify (\st -> st {applied = (i, n, Located s' x) : applied st})
+      pure r
 
 -- | The variables a pattern binds, where they occur.
 vars :: Located (Pattern Name) -> [Located Name]

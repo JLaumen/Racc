@@ -2,5 +2,5 @@
 f x =
   g : a -> a
   g _ = x
-  g 1
+  return g 1
 main = print 1

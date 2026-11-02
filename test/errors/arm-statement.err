@@ -1,0 +1,4 @@
+test/errors/arm-statement.racc:3:10: error: only a simple statement can follow `->` on the same line; start a block on the next line
+  |
+3 |     0 -> while True
+  |          ^^^^^^^^^^

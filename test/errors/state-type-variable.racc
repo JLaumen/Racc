@@ -2,5 +2,5 @@ f n =
   state
     s : a
     s = n
-  s
+  return s
 main = print (f 1)

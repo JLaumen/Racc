@@ -1,2 +1,11 @@
 f =
   break
+-- The block of a value or assignment is a body of its own.
+g =
+  state
+    _t = 0
+  while True
+    _t =
+      break
+    (_a, _) =
+      continue

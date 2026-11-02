@@ -29,10 +29,13 @@ the syntax is in `GRAMMAR.md`.
   not depend on itself, directly or through functions. Values are evaluated
   before `main`, in the order of their dependencies, and otherwise in source
   order.
-- A block's value is that of its last statement. An `if` with `else` and a
-  `match` have the value of their branches; other statements have the
-  value `()`. `return`, `break`, `continue`, and a `while True` without a
-  `break` for it never finish, so they fit any type.
+- A body on the line of its `=` is the value of the definition. A body
+  that is a block gives the value with `return`; reaching its end gives
+  `()`, which is an error unless the result is `Void`. In a value, state
+  variable, or binding too, a block after `=` is a body of its own, which
+  its `return` ends and no `break` or `continue` can leave.
+- `return`, `break`, `continue`, and a `while True` without a `break` for
+  it never finish.
 - Functions are pure unless they mutate their parameters or have effects.
 - Arguments, tuple elements, and operands are evaluated from left to right;
   `and` and `or` evaluate their right side only when needed.
@@ -74,7 +77,8 @@ the syntax is in `GRAMMAR.md`.
   only use those.
 - `Void` is the type of `()`.
 - `Int` is unbounded; small values are stored as machine integers. `/`
-  rounds down, and `%` has the sign of the divisor.
+  rounds down, and `%` has the sign of the divisor. Bitwise operators act
+  on the infinite two's complement form, so `>>` also rounds down.
 - `Bool` is an ordinary type with constructors `False` and `True`.
 - Type classes (`Eq`, `Ord`, `Num`, `Show`, ...) provide overloading.
 
@@ -89,9 +93,7 @@ element of a place.
   (`xs[i] = v`) mutates the caller's value.
 - A pattern on the left, such as a tuple, assigns only places or binds only
   new names. Assigning to places is simultaneous: `(a, b) = (b, a + b)`.
-- A statement whose value is not `()` is discarded with a warning; for an
-  `if` or `match`, each branch's value is discarded on its own, so their
-  types may differ.
+- A statement whose value is not `()` is discarded with a warning.
 - An unused local (a parameter, pattern variable, binding, state variable,
   or local function) gives a warning, unless its name starts with `_`.
 
@@ -115,7 +117,7 @@ dijkstra g src =
         if d + w < dist[v]
           dist[v] = d + w
           push pq (dist[v], v)
-  dist
+  return dist
 ```
 
 ### Mutated parameters
@@ -128,7 +130,7 @@ can state it, and is then checked.
 find parent x =
   if parent[x] != x
     parent[x] = find parent parent[x]
-  parent[x]
+  return parent[x]
 ```
 
 Rules that rule out aliasing:

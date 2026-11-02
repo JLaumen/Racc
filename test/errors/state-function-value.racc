@@ -1,0 +1,14 @@
+-- `bump` uses `total` through `add`, so it can't be passed, also not
+-- partly applied.
+apply f x = f x
+count n =
+  state
+    total = 0
+  add k =
+    total = total + k
+  bump k = add k
+  apply bump n
+  scale j k = add (j * k)
+  apply (scale 2) n
+  return total
+main = print (count 3)

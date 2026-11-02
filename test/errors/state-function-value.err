@@ -1,0 +1,9 @@
+test/errors/state-function-value.racc:10:9: error: `bump` uses the state of an enclosing function, so it can only be called
+   |
+10 |   apply bump n
+   |         ^^^^
+
+test/errors/state-function-value.racc:12:10: error: `scale` uses the state of an enclosing function, so it can only be called
+   |
+12 |   apply (scale 2) n
+   |          ^^^^^

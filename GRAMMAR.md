@@ -95,15 +95,16 @@ block        ::= INDENT [ stateBlock ] stmt { stmt } DEDENT
 stateBlock   ::= 'state' NEWLINE INDENT stateLine { stateLine } DEDENT
 stateLine    ::= signature | LOWER '=' body
 
-stmt         ::= signature                          -- local signature
+stmt         ::= simpleStmt
+               | signature                          -- local signature
                | equation                           -- local function or assignment
-               | pattern '=' body                   -- binding or assignment
                | 'if' expr NEWLINE block
                  { 'elif' expr NEWLINE block }
                  [ 'else' NEWLINE block ]
                | 'while' expr NEWLINE loopBlock
                | 'for' pattern 'in' expr NEWLINE loopBlock  -- 0.1: expr is a range
                | 'match' expr NEWLINE INDENT arm { arm } DEDENT
+simpleStmt   ::= pattern '=' body                   -- binding or assignment
                | 'return' [ expr ] NEWLINE
                | 'break' [ INT ] NEWLINE
                | 'continue' [ INT ] NEWLINE
@@ -113,9 +114,10 @@ stmt         ::= signature                          -- local signature
 
 loopBlock    ::= INDENT { invariant } stmt { stmt } DEDENT
 invariant    ::= 'invariant' expr NEWLINE           -- not in 0.1
-arm          ::= pattern ( '->' body
+arm          ::= pattern ( '->' armBody
                          | NEWLINE INDENT guardArm { guardArm } DEDENT )
-guardArm     ::= '|' guard '->' body
+guardArm     ::= '|' guard '->' armBody
+armBody      ::= simpleStmt | NEWLINE block
 ```
 
 A `stateBlock` is only allowed in a function's body, including each guard's
@@ -195,7 +197,8 @@ atype        ::= LOWER | UPPER
   `f -x ** 2` is `(f (-x)) ** 2`, while `-x ** 2` is `-(x ** 2)`.
 - In brackets, `|` starts a comprehension only if a generator `p <- e`
   follows it; otherwise it is bitwise or.
-- `x = e` is an `equation`, not a `pattern` binding.
+- `x = e` is an `equation`, not a `pattern` binding; as an `armBody`, it
+  counts as a `simpleStmt`.
 - Consecutive equations with parameters and the same name form one
   function, also in a body. An equation without parameters defines or
   assigns a value on its own, so `x = 1` followed by `x = 2` is an error.

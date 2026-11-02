@@ -27,4 +27,4 @@ test/resolve/unused.racc:10:5: warning: `v` is unused
    |
 10 |     v -> 0
    |     ^
-(eq f (x.0 _y.1) (block (state (var s.2 0)) (eq g.3 (z.4) 0) (eq h.5 (n.6) (app h.5 n.6)) (bind (tuple a.7 _b.8) (tuple 1 2)) (match x.0 (v.9 0))))
+(eq f (x.0 _y.1) (block (state (var s.2 0)) (eq g.3 (z.4) 0) (eq h.5 (n.6) (app h.5 n.6)) (bind (tuple a.7 _b.8) (tuple 1 2)) (match x.0 (v.9 (block 0)))))

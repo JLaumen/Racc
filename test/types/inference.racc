@@ -10,12 +10,12 @@ none = None
 generalized =
   swap (x, y) = (y, x)
   local = None
-  (identity 1, identity True, swap (1, True), swap (False, 2), orElse 1 none, orElse True none, orElse 1 local, orElse True local)
+  return (identity 1, identity True, swap (1, True), swap (False, 2), orElse 1 none, orElse True none, orElse 1 local, orElse True local)
 
 orElse d o =
   match o
-    Some x -> x
-    None -> d
+    Some x -> return x
+    None -> return d
 
 -- Function arguments and nested types.
 apply f x = f x
@@ -33,7 +33,7 @@ twice : a -> Pair a
 twice x =
   copy : a -> (a, a)
   copy y = (y, x)
-  copy x
+  return copy x
 
 -- Polymorphic recursion, with a signature, at types that don't grow
 -- around a cycle.
@@ -47,11 +47,11 @@ equality x y = x == y != True
 
 patterns o =
   match o
-    None -> 0
-    Some (0 or 1) -> 1
+    None -> return 0
+    Some (0 or 1) -> return 1
     Some n as _s
-      | n > 0 -> 2
-      | otherwise -> 3
+      | n > 0 -> return 2
+      | otherwise -> return 3
 unit () = ()
 
 main =

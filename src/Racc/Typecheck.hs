@@ -21,7 +21,7 @@ import Data.List (intercalate, sortOn)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing)
+import Data.Maybe (isJust, isNothing)
 import Data.Set qualified as Set
 import Data.Traversable (for)
 import Racc.Diagnostic (Diagnostic (Diagnostic), Located (Located), Result, Severity (Error, Warning), Span, quote)
@@ -65,6 +65,9 @@ data S = S
     diagnostics :: [Diagnostic],
     -- | Statements whose values are discarded.
     discarded :: [(Span, Ty)],
+    -- | Where bodies can end, with their result types, until the end of
+    -- their definition group.
+    endings :: [(Span, Ty)],
     -- | Loops that a `break` leaves.
     broken :: IntSet,
     -- | Each definition and parameter, with its top-level definition.
@@ -103,7 +106,7 @@ data Unit = UDef Def | UStmt (Located (Stmt Ref))
 typecheck :: [Located (Decl Ref)] -> Result String
 typecheck ds = (diagnostics st, out <$ guard (not (any isError (diagnostics st))))
   where
-    (out, st) = runState (program ds) (S 0 IntMap.empty IntMap.empty IntMap.empty [] [] IntSet.empty [] [])
+    (out, st) = runState (program ds) (S 0 IntMap.empty IntMap.empty IntMap.empty [] [] [] IntSet.empty [] [])
 
 program :: [Located (Decl Ref)] -> T String
 program ds = do
@@ -188,7 +191,17 @@ defGroup env ds = do
   let with ss = env {values = Map.fromList ss <> values env}
       rec = with [(defRef d, s) | (d, s, _, _) <- ds']
       own d = if level env == 0 then refName (defRef d) else owner env
+  outer <- gets endings
+  modify (\st -> st {endings = []})
   for_ ds' $ \(d, _, t, vs) -> definition rec {level = level env + 1, tyVars = vs, owner = own d} t d
+  -- Reaching the end of a body gives `()`.
+  es <- gets endings
+  modify (\st -> st {endings = outer})
+  for_ es $ \(s, t) ->
+    zonk t >>= \case
+      TCon "Void" [] -> pure ()
+      TVar _ -> unify s voidTy t
+      _ -> report s "`return` is missing: the body can end after this statement"
   fmap with . for ds' $ \(d, _, t, _) -> do
     modify (\st -> st {typed = (own d, defRef d, t) : typed st})
     (defRef d,) <$> generalize env t
@@ -200,7 +213,7 @@ definition env t (Def _ eqs) = for_ eqs $ \(Located _ (Equation (Located s r) ps
   res <- fresh env
   unify s t (foldr TFun res args)
   env' <- foldM (\e (p, a) -> pat e a p) env {result = res, loops = []} (zip ps args)
-  rhs env' (Just res) rh
+  void (rhs env' (Just res) rh)
 
 -- | The type of a signature at a level, with the type variables in scope;
 -- new ones are rigid.
@@ -261,36 +274,43 @@ instantiate env (Forall is t) = do
 
 -- * Statements
 
--- | Checks a right-hand side against its value's type, or discards its
--- value.
-rhs :: Env -> Maybe Ty -> Rhs Ref -> T ()
+-- | Checks a right-hand side. Given its value's type, a one-line body is
+-- that value, and a block is a body of its own that gives it with `return`;
+-- otherwise its value is discarded. Tells whether it can finish.
+rhs :: Env -> Maybe Ty -> Rhs Ref -> T Bool
 rhs env t = \case
   Plain b -> body env t b
-  Guarded gs -> for_ gs $ \(g, b) -> do
+  Guarded gs -> fmap or . for (toList gs) $ \(g, b) -> do
     case g of
       Guard e -> expr env boolTy e
       Otherwise -> pure ()
     body env t b
 
-body :: Env -> Maybe Ty -> Body Ref -> T ()
+body :: Env -> Maybe Ty -> Body Ref -> T Bool
 body env m = \case
-  ExprBody e@(Located s _) -> value env s m >>= \t -> expr env t e
-  BlockBody b -> block env m b
+  ExprBody e@(Located s _) -> True <$ (value env s m >>= \t -> expr env t e)
+  BlockBody b -> case m of
+    Nothing -> isJust <$> block env b
+    Just t -> True <$ (block env {result = t, loops = []} b >>= traverse_ (\s -> modify (\st -> st {endings = (s, t) : endings st})))
 
--- | Checks a block against its value's type, or discards its value.
-block :: Env -> Maybe Ty -> Block Ref -> T ()
-block env m (Block sv ss) = do
+-- | Checks a block; gives the span of its last statement if the block can
+-- end after it.
+block :: Env -> Block Ref -> T (Maybe Span)
+block env (Block sv ss) = do
   env' <- stateLines env sv
   let go e = \case
-        [u] -> void (unit e m u)
-        u : us -> unit e Nothing u >>= \e' -> go e' us
-        [] -> pure ()
+        [u] -> (\(_, f) -> unitSpan u <$ guard f) <$> unit e u
+        u : us -> unit e u >>= \(e', _) -> go e' us
+        [] -> pure Nothing
   go env' (units (map item (toList ss)))
   where
     item = \case
       Located _ (LocalSignature (Signature _ t)) -> ISig t
       Located s (LocalEquation e) -> IEq (Located s e)
       s -> IStmt s
+    unitSpan = \case
+      UDef (Def _ (Located s _ :| _)) -> s
+      UStmt (Located s _) -> s
 
 stateLines :: Env -> [StateLine Ref] -> T Env
 stateLines env = \case
@@ -304,66 +324,60 @@ stateLines env = \case
   where
     var u (Located _ r) b rest = body env (Just u) b >> bind env r u >>= \e -> stateLines e rest
 
--- | Checks a statement, or a local definition, against the type of its
--- value, or discards its value; gives the scope after it.
-unit :: Env -> Maybe Ty -> Unit -> T Env
-unit env m = \case
-  UDef d@(Def sig (Located s (Equation (Located _ r) ps rh) :| _))
-    | isNothing sig, null ps, Just (Forall _ t) <- Map.lookup r (values env) -> env <$ (rhs env (Just t) rh >> none s m)
+-- | Checks a statement, or a local definition; gives the scope after it,
+-- and whether it can finish.
+unit :: Env -> Unit -> T (Env, Bool)
+unit env = \case
+  UDef d@(Def sig (Located _ (Equation (Located _ r) ps rh) :| _))
+    | isNothing sig, null ps, Just (Forall _ t) <- Map.lookup r (values env) -> (env, True) <$ rhs env (Just t) rh
     | otherwise -> do
         sig' <- traverse (signature env (level env + 1)) sig
-        defGroup env [(d, sig')] <* none s m
+        (,True) <$> defGroup env [(d, sig')]
   UStmt (Located s st) -> case st of
     Bind p b -> do
       t <- fresh env
-      body env (Just t) b
-      pat env t p <* none s m
+      _ <- body env (Just t) b
+      (,True) <$> pat env t p
     If bs e -> do
-      -- Without `else`, the branches' values are discarded.
-      let t = m <* e
-      for_ bs $ \(c, b) -> expr env boolTy c >> block env t b
-      traverse_ (block env t) e
-      env <$ when (isNothing e) (none s m)
+      fs <- for (toList bs) $ \(c, b) -> expr env boolTy c >> isJust <$> block env b
+      fe <- traverse (fmap isJust . block env) e
+      pure (env, maybe True (|| or fs) fe)
     While c b -> do
       i <- newId
       expr env boolTy c
-      block env {loops = i : loops env} Nothing b
+      _ <- block env {loops = i : loops env} b
       left <- gets (IntSet.member i . broken)
       let forever = case c of
             Located _ (Con "True") -> not left
             _ -> False
-      env <$ unless forever (none s m)
+      pure (env, not forever)
     For p (Range a _ b c) bl -> do
       traverse_ (expr env intTy) (a : b : toList c)
       i <- newId
       env' <- pat env intTy p
-      block env' {loops = i : loops env} Nothing bl
-      env <$ none s m
+      _ <- block env' {loops = i : loops env} bl
+      pure (env, True)
     Match e arms -> do
       u <- fresh env
       expr env u e
-      for_ arms $ \(p, r) -> pat env u p >>= \env' -> rhs env' m r
-      pure env
-    Return e -> env <$ maybe (unify s (result env) voidTy) (expr env (result env)) e
+      fs <- for (toList arms) $ \(p, r) -> pat env u p >>= \env' -> rhs env' Nothing r
+      pure (env, or fs)
+    Return e -> (env, False) <$ maybe (unify s (result env) voidTy) (expr env (result env)) e
     Break n -> do
       let k = maybe 1 (\(Located _ x) -> fromInteger x) n
       for_ (take 1 (drop (k - 1) (loops env))) $ \i -> modify (\st' -> st' {broken = IntSet.insert i (broken st')})
-      pure env
-    Continue _ -> pure env
-    Pass -> env <$ none s m
-    ExprStmt e -> value env s m >>= \t -> env <$ expr env t e
+      pure (env, False)
+    Continue _ -> pure (env, False)
+    Pass -> pure (env, True)
+    ExprStmt e -> value env s Nothing >>= \t -> (env, True) <$ expr env t e
     -- Grouped into definitions by `units`.
-    LocalSignature _ -> pure env
-    LocalEquation _ -> pure env
+    LocalSignature _ -> pure (env, True)
+    LocalEquation _ -> pure (env, True)
 
--- | The type of a statement's value: the given one, or one that is
+-- | The type of a one-line body's value: the given one, or one that is
 -- discarded.
 value :: Env -> Span -> Maybe Ty -> T Ty
 value env s = maybe (fresh env >>= \t -> t <$ modify (\st -> st {discarded = (s, t) : discarded st})) pure
-
--- | A statement whose value is `()`.
-none :: Span -> Maybe Ty -> T ()
-none s = traverse_ (\t -> unify s t voidTy)
 
 -- * Expressions and patterns
 

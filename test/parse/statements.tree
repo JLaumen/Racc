@@ -5,5 +5,5 @@
 (eq ifs () (block (if ((if a b c) (block d))) (if (e (block f)) (g (block h)) (else (block i)))))
 (eq expressions () (block (if a b c) (app Foo 1)))
 (eq loops () (block (while a (block b)) (for (tuple i j) (to 1 n 2) (block pass)) (for i (until a b) (block pass)) (for i (downto a b) (block pass))))
-(eq matches () (block (match x ((Just y) y) (N (guards (a 1) (otherwise 2))) (_ (block pass)))))
+(eq matches () (block (match x ((Just y) (block y)) (N (guards (a (block 1)) (otherwise (block 2)))) (_ (block pass)))))
 (eq jumps () (block (return) (return a) (break) (break 2) (continue) (continue 2)))

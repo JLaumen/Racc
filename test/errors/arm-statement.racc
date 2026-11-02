@@ -1,0 +1,6 @@
+f x =
+  match x
+    0 -> while True
+      pass
+    _ -> pass
+main = f 1

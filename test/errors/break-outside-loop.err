@@ -2,3 +2,13 @@ test/errors/break-outside-loop.racc:2:3: error: `break` must be inside a loop
   |
 2 |   break
   |   ^^^^^
+
+test/errors/break-outside-loop.racc:9:7: error: `break` must be inside a loop
+  |
+9 |       break
+  |       ^^^^^
+
+test/errors/break-outside-loop.racc:11:7: error: `continue` must be inside a loop
+   |
+11 |       continue
+   |       ^^^^^^^^
